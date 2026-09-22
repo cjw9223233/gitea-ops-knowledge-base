@@ -1,0 +1,484 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="票務中心系統組 Gitea 維運知識庫：實機架構、巡檢、排程、備份還原與新人交接。"><title>系統與網路 · Gitea 維運知識庫</title><link rel="icon" type="image/svg+xml" href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"%3E%3Crect width="40" height="40" rx="10" fill="%23102c3c"/%3E%3Cpath d="m10 12 8 8-8 8m12 0h9" fill="none" stroke="%237ce4d4" stroke-width="3"/%3E%3C/svg%3E'><link rel="stylesheet" href="styles.css"><script src="site.js" defer></script></head><body><a class="skip" href="#main">跳至主要內容</a><aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a><p class="nav-label">工作指南</p><nav class="nav" aria-label="知識庫導覽"><a href="index.html"><span>00</span>總覽</a><a href="start.html"><span>01</span>新手入門</a><a href="system.html" aria-current="page"><span>02</span>系統與網路</a><a href="daily.html"><span>03</span>巡檢與排查</a><a href="backup.html"><span>04</span>備份與還原</a><a href="schedule.html"><span>05</span>排程管理</a><a href="access.html"><span>06</span>權限與交接</a></nav><div class="side-bottom"><strong>票務中心系統組</strong>coffee · 維運文件<br>文件基準 2026.09.22</div></aside><div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>系統與網路</b></div><div class="edition">交接版 <strong>01</strong></div></header><main id="main" class="content"><div class="doc-title"><p class="eyebrow">OPERATIONS HANDBOOK</p><h1>系統與網路</h1><p>主機、Docker、資料路徑與防火牆的已確認現況。</p></div><div class="notice"><strong>現況快照</strong><span>本頁數值來自 2026.09.21 的盤點。root 排程已於次日完成更新，請以<a href="schedule.html">部署報告</a>為準。</span></div><div class="doc-layout" style="margin-top:24px"><article class="article"><h2 id="2">2. 系統架構與實機清單</h2>
+<h3 id="21">2.1 架構</h3>
+<div class="topology"><div>使用者<small>HTTP 3000 / Git SSH 2222</small></div><span aria-hidden="true">→</span><div>Gitea<small>設定、Git 與 LFS</small></div><span aria-hidden="true">→</span><div>PostgreSQL<small>db:5432 · 容器內網</small></div></div>
+
+<p>圖中的網路連線仍受防火牆及上游網路限制。本次只確認本機服務回應正常，沒有從所有使用者網段進行可達性測試。</p>
+<h3 id="22">2.2 主機與資源</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>已確認現況</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主機名稱／作業系統</td>
+<td><code>coffee</code>／Ubuntu 24.04.2 LTS（<code>/etc/os-release</code> 回報）</td>
+</tr>
+<tr>
+<td>執行中的核心</td>
+<td><code>7.0.0-31-generic</code>；套件來源與選版理由待管理員核對</td>
+</tr>
+<tr>
+<td>CPU</td>
+<td>Intel Core i7-3540M，4 個邏輯 CPU</td>
+</tr>
+<tr>
+<td>記憶體／Swap</td>
+<td>約 3.7 GiB／3.7 GiB；盤點時 Swap 未使用</td>
+</tr>
+<tr>
+<td>磁碟</td>
+<td>一顆 <code>sda</code> 約 476.9 GiB；沒有觀察到 Linux software RAID</td>
+</tr>
+<tr>
+<td>根目錄</td>
+<td><code>/dev/sda2</code>，ext4，約 468 GiB；已用 57 GiB、可用 388 GiB、13%</td>
+</tr>
+<tr>
+<td>EFI</td>
+<td><code>/dev/sda1</code>，約 1.1 GiB；另有 <code>/swap.img</code></td>
+</tr>
+<tr>
+<td>Gitea 檔案資料／DB</td>
+<td><code>data</code> 約 4.0 GiB；資料庫邏輯大小約 22 MB，不等於 postgres 資料目錄占用量</td>
+</tr>
+<tr>
+<td>日誌空間</td>
+<td>systemd journal 約 1.3 GB</td>
+</tr>
+<tr>
+<td>時區／RTC</td>
+<td>Asia/Taipei；硬體時鐘採本地時間</td>
+</tr>
+<tr>
+<td>時間同步</td>
+<td>NTP 服務有啟動，但 <code>System clock synchronized: no</code></td>
+</tr>
+<tr>
+<td>Docker／Compose</td>
+<td>Docker Engine 29.1.3；Compose v2.38.2</td>
+</tr>
+</tbody>
+</table></div>
+<p>時間問題會影響備份名稱、日誌排序、憑證及雙因素驗證。一次近乎同時的比較：主機 UTC 為 <code>03:45:44</code>，盤點工作站 UTC 為 <code>02:55:20</code>，約相差 50 分鐘。這證明兩台時鐘不一致，<strong>不能單憑工作站時間認定哪個是標準時間</strong>；需對照可信任的公司 NTP。手冊中主機日誌與檔案時間均保留原值。</p>
+<h3 id="23">2.3 容器與相關服務</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>容器</th>
+<th>版本／用途</th>
+<th>狀態與啟動政策</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gitea-server-1</code></td>
+<td><code>docker.gitea.com/gitea:1.23.5-rootless</code></td>
+<td>執行中；<code>restart: always</code>；UID:GID 為 <code>1000:1000</code></td>
+</tr>
+<tr>
+<td><code>gitea-db-1</code></td>
+<td><code>postgres:14</code>；實際 PostgreSQL 14.18</td>
+<td>執行中；<code>restart: always</code>；資料庫行程帳號 UID:GID 為 <code>999:999</code></td>
+</tr>
+<tr>
+<td><code>mariadb</code></td>
+<td><code>mariadb:latest</code>，屬於 myxampp</td>
+<td>2026-03-03 起停止；不自動重啟</td>
+</tr>
+<tr>
+<td><code>myxampp-php-apache-1</code></td>
+<td><code>myxampp-php-apache</code></td>
+<td>2026-03-03 起停止；不自動重啟</td>
+</tr>
+</tbody>
+</table></div>
+<p>Gitea 的 Compose 專案名稱為 <code>gitea</code>，服務名稱是 <code>server</code> 與 <code>db</code>。兩個執行中的容器未設定 Docker healthcheck，也未設定記憶體／CPU 上限。<code>Up</code> 只代表行程存活，要另外驗證網站與資料庫。</p>
+<p>Gitea 映像的 <code>rootless</code> 指容器內的 Gitea 以非 root 使用者運作。本機 Docker 是系統層 daemon，不能把它解讀為整個 Docker 都是 rootless。</p>
+<p>主機另有 apt-cacher-ng、chrony、桌面環境、CUPS、Avahi、Bluetooth 等服務。<code>fwupd-refresh.service</code> 顯示失敗；不等於 Gitea 故障。當日 <code>last -x</code> 有多筆啟動及 <code>crash</code> 標記，原因尚未確認，應查電力、關機排程及開機日誌，不能直接宣稱是硬體故障。</p>
+<h3 id="24">2.4 專案規模與管理現況</h3>
+<p>以下為唯讀資料庫統計，沒有擷取帳號名單或原始碼：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th style="text-align: right;">數量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>個人使用者／啟用使用者</td>
+<td style="text-align: right;">17／17</td>
+</tr>
+<tr>
+<td>站台管理員</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td>組織／團隊</td>
+<td style="text-align: right;">2／3</td>
+</tr>
+<tr>
+<td>儲存庫</td>
+<td style="text-align: right;">93</td>
+</tr>
+<tr>
+<td>私有／非私有儲存庫</td>
+<td style="text-align: right;">6／87</td>
+</tr>
+<tr>
+<td>已設定雙因素驗證的帳號</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>分支保護規則</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>外部認證來源／註冊 Runner</td>
+<td style="text-align: right;">0／0</td>
+</tr>
+</tbody>
+</table></div>
+<p>非私有不代表已在 Internet 公開，但目前 <code>REQUIRE_SIGNIN_VIEW=false</code>，應由專案負責人確認可連到網站的人是否都應看見這些專案。</p>
+<h2 id="3">3. 網路、連線與防火牆</h2>
+<h3 id="31">3.1 網路設定現況</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>已確認值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>使用中的實體網卡</td>
+<td><code>eno1</code>，1 Gbps full duplex，MTU 1500</td>
+</tr>
+<tr>
+<td>主要 IP</td>
+<td><code>10.253.114.160/24</code></td>
+</tr>
+<tr>
+<td>同網卡第二個 IP</td>
+<td><code>192.168.1.2/24</code></td>
+</tr>
+<tr>
+<td>預設閘道</td>
+<td><code>10.253.114.254</code>，經 <code>eno1</code></td>
+</tr>
+<tr>
+<td>DNS</td>
+<td><code>10.36.1.1</code>、<code>10.254.1.1</code>；盤點時使用後者</td>
+</tr>
+<tr>
+<td>第二張網卡</td>
+<td><code>enp5s0</code>，DOWN</td>
+</tr>
+<tr>
+<td>IPv6</td>
+<td><code>eno1</code> 有 link-local 位址；未看到 global IPv6 位址</td>
+</tr>
+<tr>
+<td>Gitea 網路</td>
+<td><code>gitea_default</code>，<code>172.18.0.0/16</code>；目前 server <code>.2</code>、db <code>.3</code></td>
+</tr>
+<tr>
+<td>其他 Docker 網路</td>
+<td><code>docker0</code>：<code>172.17.0.0/16</code>；myxampp：<code>172.19.0.0/16</code></td>
+</tr>
+<tr>
+<td>IPv4／IPv6 forwarding</td>
+<td><code>1</code>／<code>0</code></td>
+</tr>
+<tr>
+<td>網路管理</td>
+<td>NetworkManager 與 systemd-networkd 均 active；<code>eno1</code> 由 Netplan 產生的 networkd 設定管理</td>
+</tr>
+<tr>
+<td>設定檔</td>
+<td><code>/etc/netplan/coffee_config.yaml</code>；root:root、600，本次未讀取內容</td>
+</tr>
+<tr>
+<td>交換器線索</td>
+<td><code>networkctl</code> 顯示連到 <code>GS2210</code> port 1；實體位置及 VLAN 待確認</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>192.168.1.2</code> 與主 IP 在<strong>同一張網卡</strong>，不代表有兩條獨立網路備援。容器 IP 可能重建後改變，Gitea 連資料庫應維持 <code>db:5432</code>，不要改成目前的 <code>172.18.0.3</code>。</p>
+<h3 id="32">3.2 對外監聽埠</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>埠</th>
+<th>用途</th>
+<th>盤點時綁定位址</th>
+<th>維運重點</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TCP 22</td>
+<td>Linux SSH</td>
+<td>IPv4／IPv6 全介面</td>
+<td>只給維運人員；與 Docker 白名單分開檢查</td>
+</tr>
+<tr>
+<td>TCP 3000</td>
+<td>Gitea HTTP</td>
+<td>IPv4／IPv6 全介面</td>
+<td>應限核准來源，規劃 HTTPS</td>
+</tr>
+<tr>
+<td>TCP 2222</td>
+<td>Gitea 內建 Git SSH</td>
+<td>IPv4／IPv6 全介面</td>
+<td>使用個人 Gitea 公鑰</td>
+</tr>
+<tr>
+<td>TCP 5432</td>
+<td>PostgreSQL</td>
+<td>僅容器內，沒有發布主機埠</td>
+<td>不應為方便而直接對外開放</td>
+</tr>
+<tr>
+<td>TCP 3142</td>
+<td>apt-cacher-ng 對應服務</td>
+<td>IPv4／IPv6 全介面</td>
+<td>核對實際使用者及允許來源</td>
+</tr>
+<tr>
+<td>UDP 123</td>
+<td>NTP</td>
+<td>IPv4 全介面</td>
+<td>chrony 允許 <code>192.168.1.0/24</code> 使用；需確認需求</td>
+</tr>
+<tr>
+<td>UDP 5353</td>
+<td>mDNS／Avahi</td>
+<td>IPv4／IPv6 全介面</td>
+<td>評估伺服器是否需要區網探索</td>
+</tr>
+<tr>
+<td>TCP 631</td>
+<td>CUPS</td>
+<td>loopback</td>
+<td>列印用途待確認</td>
+</tr>
+<tr>
+<td>TCP／UDP 53</td>
+<td>systemd-resolved</td>
+<td>loopback</td>
+<td>本機 DNS stub</td>
+</tr>
+</tbody>
+</table></div>
+<p>監聽不代表所有來源都能連入；反過來，UFW inactive 也不代表完全沒有防火牆。</p>
+<h3 id="33-gitea">3.3 已存在的 Gitea 白名單</h3>
+<p>現有 <code>/home/Gitea/gitea-access-rules.sh</code> 使用 <code>iptables</code> 的 <code>DOCKER-USER</code> 鏈，允許指定 IP 連入 3000／2222，最後對其他來源 DROP，並執行 <code>netfilter-persistent save</code>。本次<strong>只閱讀，沒有執行</strong>。</p>
+<p>腳本中的有效 IPv4 清單如下；這是<strong>檔案內容，不是已驗證的生效規則</strong>：</p>
+<pre><code class="language-text">10.253.114.250  10.253.114.117  10.253.111.129
+10.253.114.174  10.253.114.175  10.253.111.155
+10.253.114.177  10.253.114.157  10.253.114.195
+10.253.114.186  10.253.114.194  10.253.114.136
+10.253.114.206  10.253.114.210  10.253.114.139
+10.253.111.124  10.253.114.198  10.253.114.158
+10.253.114.149  10.253.114.129  10.253.114.128
+10.253.114.204  172.0.20.162    10.253.111.135
+</code></pre>
+<p><code>172.0.20.162</code> 不在 RFC1918 的 <code>172.16.0.0/12</code> 私有網段中；這可能是現場規劃，也可能需更正，先找網管確認，不自行修改。</p>
+<p>已確認 <code>netfilter-persistent</code> enabled 且本次開機載入成功，並存在 <code>/etc/iptables/rules.v4</code>、<code>rules.v6</code>。但本次無法讀取這兩個檔案及核心內的規則，故不能保證白名單完整、IPv6 有同等限制，或重開機後 Docker 規則順序正確。</p>
+<p>Docker 發布埠的封包路徑與一般主機服務不同，不能只看 UFW。現有 iptables 架構下，應檢查 <code>DOCKER-USER</code> 與 FORWARD/NAT；不要自行關閉 Docker 的防火牆管理。<a href="https://docs.docker.com/engine/network/packet-filtering-firewalls/">Docker 防火牆文件</a></p>
+<p><strong>原腳本的維護風險：</strong>它會清空整條 <code>DOCKER-USER</code>，可能刪掉其他專案規則；規則只依目的埠、未限入口網卡與目的容器，可能影響其他同埠流量；而且腳本本身為 777，可被其他本機帳號修改。應先限制腳本寫入權，再由網管重構成專屬鏈，禁止新手直接照舊 README 執行。</p>
+<h3 id="34">3.4 新增使用者連線需求</h3>
+<ol>
+<li>PM 記錄申請人、用途、來源 IP、預計到期日及專案。</li>
+<li>網管確認是否經 NAT／VPN；真正抵達主機的來源 IP 才是白名單應使用的值。</li>
+<li>先由管理員備存<strong>現行</strong>規則、確認 22 埠管理通道及現場主控台可用。</li>
+<li>經審核後只加入需要的來源及埠；同時考慮 IPv4、IPv6 與持久化。</li>
+<li>從一台允許來源、一台不允許來源分別測 3000／2222；管理用 22 要另外測。</li>
+<li>維護時段內驗證重啟 Docker／重開機後效果，保存測試結果與申請單。</li>
+</ol>
+<p>只有白名單仍不夠，還須另做第 5 章的 Gitea 帳號及專案授權。</p>
+<h3 id="35">3.5 唯讀網路排查</h3>
+<p>Windows 使用者端：</p>
+<pre><code class="language-powershell">Test-NetConnection 10.253.114.160 -Port 22
+Test-NetConnection 10.253.114.160 -Port 3000
+Test-NetConnection 10.253.114.160 -Port 2222
+</code></pre>
+<p>Linux 主機端：</p>
+<pre><code class="language-bash">ip -br address
+ip route
+resolvectl status
+ss -lntup
+networkctl status eno1 --no-pager
+</code></pre>
+<p>由有 sudo 權限的人補查，輸出僅存於限制存取的維運紀錄：</p>
+<pre><code class="language-bash">sudo cat /etc/netplan/coffee_config.yaml
+sudo iptables -S
+sudo iptables -t nat -S
+sudo ip6tables -S
+sudo nft list ruleset
+sudo ufw status verbose
+</code></pre>
+<h3 id="36-ipdns-natntp">3.6 IP／DNS 變更與 NAT、NTP 的關聯</h3>
+<p><strong>以下為規劃流程，不是目前已執行的變更。</strong>變更 IP 前需同步檢查 Netplan、閘道、DNS、上游 ACL、Gitea <code>DOMAIN</code>／<code>SSH_DOMAIN</code>／<code>ROOT_URL</code>、Git remote、Webhook、鏡像目的端及所有使用者文件。</p>
+<p>先取得現場主控台，備存原設定，由管理員檢查 YAML 後使用 <code>netplan try --timeout 120</code> 做限時驗證。新連線及原連線都正常才確認保留；超時回復仍需從主控台確認，不能把自動回復當作絕對保障。<a href="https://netplan.readthedocs.io/en/stable/netplan-try/">Netplan try 說明</a></p>
+<p>另外找到 <code>/home/coffee/scripts/enable-nat.sh</code>，內容規劃把 <code>192.168.1.0/24</code> 經 <code>eno1</code> 做 NAT；目前 IP forwarding 確實為 1，但 NAT 規則未能讀取。主機可能還承擔其他設備的出口或校時功能，移機前要確認，不能只搬 Gitea 就關機。</p>
+<p>chrony 設有多個上游 NTP，盤點時全部來源為 <code>^?</code>／Reach 0，且啟用 <code>local stratum 10</code>。這會在沒有上游時仍以本地時鐘提供時間；<code>Leap status: Normal</code> 不等於已對準外部標準。先查公司 NTP、DNS、UDP 123 與網路政策，再於維護時段處理校時及 RTC 設定，避免突然跳時影響服務。</p>
+<h2 id="4-docker-gitea">4. Docker 與 Gitea 設定管理</h2>
+<h3 id="41">4.1 重要檔案與資料位置</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>主機路徑</th>
+<th>容器內路徑／用途</th>
+<th>備份要求</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/home/Gitea/docker-compose.yml</code></td>
+<td>啟動定義、映像、埠、DB 環境變數</td>
+<td>必備；包含密碼，不能貼到公開文件</td>
+</tr>
+<tr>
+<td><code>/home/Gitea/config/app.ini</code></td>
+<td><code>/etc/gitea/app.ini</code>，Gitea 設定與機密</td>
+<td>必備；必須保留原機密值</td>
+</tr>
+<tr>
+<td><code>/home/Gitea/data</code></td>
+<td><code>/var/lib/gitea</code>，Git、LFS、附件等</td>
+<td>完整備份，不要只挑 repositories</td>
+</tr>
+<tr>
+<td><code>/home/Gitea/data/git/repositories</code></td>
+<td>Git repositories</td>
+<td>必備，包含可能存在的 wiki Git 倉庫</td>
+</tr>
+<tr>
+<td><code>/home/Gitea/data/git/lfs</code></td>
+<td>LFS 大型檔案</td>
+<td>必備</td>
+</tr>
+<tr>
+<td><code>/home/Gitea/postgres</code></td>
+<td><code>/var/lib/postgresql/data</code>，PostgreSQL 實體資料</td>
+<td>一致性實體備份或合格邏輯備份</td>
+</tr>
+<tr>
+<td><code>/home/Gitea/gitea-access-rules.sh</code></td>
+<td>Gitea 防火牆維護腳本</td>
+<td>保存供審閱，不可盲目執行</td>
+</tr>
+<tr>
+<td><code>/home/Gitea/docs/Gitea-Access-Rules-Readme.md</code></td>
+<td>舊有白名單操作說明</td>
+<td>參考文件，不是生效證據</td>
+</tr>
+<tr>
+<td><code>/home/coffee/scripts/B_generate_backups.sh</code></td>
+<td>現有通用備份腳本</td>
+<td>保存版本，需改善後才可當可靠備份流程</td>
+</tr>
+<tr>
+<td><code>/etc/netplan</code>、<code>/etc/iptables</code>、<code>/etc/chrony</code>、<code>/etc/ssh</code></td>
+<td>主機連線、安全、校時</td>
+<td>加密備份；還原時依新主機環境調整</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>/home/Gitea</code> 裡另有 2025-04-07 的 <code>config0407.tar</code>、<code>data0407.tar</code>、<code>postgres0407.tar</code>、<code>gitea0407.tar.gz</code>。年代久且用途未完整驗證，不能當最新還原點。</p>
+<h3 id="42">4.2 已確認的應用設定</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>設定</th>
+<th>現況與意義</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ROOT_URL</code></td>
+<td><code>http://10.253.114.160:3000/</code></td>
+</tr>
+<tr>
+<td><code>RUN_USER</code>／<code>RUN_MODE</code></td>
+<td><code>git</code>／<code>prod</code></td>
+</tr>
+<tr>
+<td>Git SSH</td>
+<td>內建 SSH 開啟，對外與內部均 2222</td>
+</tr>
+<tr>
+<td>資料庫</td>
+<td>PostgreSQL，<code>db:5432</code>，DB 與帳號皆 <code>gitea</code></td>
+</tr>
+<tr>
+<td>DB TLS</td>
+<td><code>SSL_MODE=disable</code>，目前在同機 Docker 網路；跨主機時需重新設計</td>
+</tr>
+<tr>
+<td>SQLite PATH</td>
+<td>設定中留有 <code>gitea.db</code> 路徑，但實際 DB_TYPE 是 postgres，不要誤備份 SQLite 檔就以為完成</td>
+</tr>
+<tr>
+<td>註冊</td>
+<td><code>DISABLE_REGISTRATION=false</code>；允許自行註冊</td>
+</tr>
+<tr>
+<td>匿名檢視</td>
+<td><code>REQUIRE_SIGNIN_VIEW=false</code></td>
+</tr>
+<tr>
+<td>郵件</td>
+<td>mailer disabled，註冊驗證與通知郵件關閉</td>
+</tr>
+<tr>
+<td>CAPTCHA</td>
+<td>關閉</td>
+</tr>
+<tr>
+<td>OpenID</td>
+<td>登入與註冊開關為 true；是否實際使用待確認</td>
+</tr>
+<tr>
+<td>組織建立</td>
+<td>一般使用者預設可建立組織</td>
+</tr>
+<tr>
+<td>LFS／離線模式</td>
+<td>LFS 開啟；<code>OFFLINE_MODE=true</code>，不代表完全沒有外部連線</td>
+</tr>
+<tr>
+<td>日誌</td>
+<td>console、info；由 Docker 收集</td>
+</tr>
+<tr>
+<td>Proxy 信任</td>
+<td><code>REVERSE_PROXY_TRUSTED_PROXIES=*</code>；實際代理與認證設計需收斂及驗證</td>
+</tr>
+</tbody>
+</table></div>
+<p>Gitea 的 <code>GITEA__...</code> 環境變數在容器啟動時可套用設定；本機 DB 設定由 Compose 提供。只改 <code>app.ini</code> 的 DB 密碼，可能在下一次啟動被環境變數覆蓋。<a href="https://docs.gitea.com/1.23/installation/install-with-docker-rootless/">Gitea 1.23 rootless Docker 文件</a></p>
+<h3 id="43">4.3 日常只讀管理</h3>
+<pre><code class="language-bash">cd /home/Gitea
+docker compose -p gitea -f docker-compose.yml ps -a
+docker compose -p gitea -f docker-compose.yml config --quiet
+docker logs --since 30m --tail 100 gitea-server-1
+docker logs --since 30m --tail 100 gitea-db-1
+docker stats --no-stream gitea-server-1 gitea-db-1
+</code></pre>
+<p><code>config --quiet</code> 只做驗證；不要把完整 <code>docker compose config</code> 或未篩選的 <code>docker inspect</code> 輸出貼進工單，因為可能含環境變數密碼。日誌也要先遮蔽 URL 認證資訊、權杖及個資。</p>
+<h3 id="44">4.4 設定變更的標準流程</h3>
+<ol>
+<li>建立變更單，寫明目的、影響範圍、維護時間、備份及回復方式。</li>
+<li>保存原 Compose、app.ini 與實際映像 digest；機密放密碼庫或受限備份。</li>
+<li>一次只改一類設定；在測試環境驗證。</li>
+<li>執行 <code>docker compose ... config --quiet</code> 檢查 YAML；它不保證所有應用參數都正確。</li>
+<li>Compose 設定變動需要重建容器才會套用；單純 <code>restart</code> 不會重新讀入新的 Compose 定義。</li>
+<li>用網站、healthz、Git 與權限驗收；紀錄結果並更新本手冊。</li>
+</ol></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#2">2. 系統架構與實機清單</a><a href="#3">3. 網路、連線與防火牆</a><a href="#4-docker-gitea">4. Docker 與 Gitea 設定管理</a></aside></div><footer class="footer"><span>依 2026.09.21–22 實機盤點與部署紀錄整理</span><span>文件快照 · 非即時監控</span></footer></main></div></body></html>

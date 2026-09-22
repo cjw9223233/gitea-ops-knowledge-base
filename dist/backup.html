@@ -1,0 +1,206 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="票務中心系統組 Gitea 維運知識庫：實機架構、巡檢、排程、備份還原與新人交接。"><title>備份與還原 · Gitea 維運知識庫</title><link rel="icon" type="image/svg+xml" href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"%3E%3Crect width="40" height="40" rx="10" fill="%23102c3c"/%3E%3Cpath d="m10 12 8 8-8 8m12 0h9" fill="none" stroke="%237ce4d4" stroke-width="3"/%3E%3C/svg%3E'><link rel="stylesheet" href="styles.css"><script src="site.js" defer></script></head><body><a class="skip" href="#main">跳至主要內容</a><aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a><p class="nav-label">工作指南</p><nav class="nav" aria-label="知識庫導覽"><a href="index.html"><span>00</span>總覽</a><a href="start.html"><span>01</span>新手入門</a><a href="system.html"><span>02</span>系統與網路</a><a href="daily.html"><span>03</span>巡檢與排查</a><a href="backup.html" aria-current="page"><span>04</span>備份與還原</a><a href="schedule.html"><span>05</span>排程管理</a><a href="access.html"><span>06</span>權限與交接</a></nav><div class="side-bottom"><strong>票務中心系統組</strong>coffee · 維運文件<br>文件基準 2026.09.22</div></aside><div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>備份與還原</b></div><div class="edition">交接版 <strong>01</strong></div></header><main id="main" class="content"><div class="doc-title"><p class="eyebrow">OPERATIONS HANDBOOK</p><h1>備份與還原</h1><p>分清楚歷史備份、新版排程，以及尚未完成的還原驗收。</p></div><div class="notice warning"><strong>請區分新舊流程</strong><span>本頁第 7 章描述舊備份的盤點結果；新版自動排程已部署，請搭配<a href="schedule.html">排程管理</a>查閱。手動還原需在隔離環境驗證。</span></div><div class="doc-layout" style="margin-top:24px"><article class="article"><h2 id="7">7. 備份現況與改善</h2>
+<h3 id="71">7.1 已找到的備份</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>位置／日期</th>
+<th>內容</th>
+<th>限制</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/var/backups/coffee/20260919</code></td>
+<td>etc 約 1.65 MB、home 約 9.05 GB、docker-volumes 約 4.12 MB</td>
+<td>最新看到的資料夾；未驗證壓縮完整性與還原成功</td>
+</tr>
+<tr>
+<td><code>/var/backups/coffee/20260829</code></td>
+<td>同類型三個壓縮檔</td>
+<td>第二組歷史備份</td>
+</tr>
+<tr>
+<td><code>/var/backups/coffee/image/20250618/rootfs.fsa</code></td>
+<td>約 1.60 GB 的系統映像檔</td>
+<td>舊映像，不等於目前 Gitea 資料</td>
+</tr>
+<tr>
+<td><code>/home/Gitea/*0407.tar*</code></td>
+<td>2025 年的歷史檔</td>
+<td>不可作最新還原點</td>
+</tr>
+</tbody>
+</table></div>
+<p>本機資料與上述備份都位於同一根分割區，磁碟壞掉會一起失去。未發現目前掛載的 NFS/CIFS 備份磁碟；不能排除外部系統另行拉取備份，但本次沒有證據可確認。</p>
+<h3 id="72">7.2 現有備份腳本的實際行為</h3>
+<p><code>/home/coffee/scripts/B_generate_backups.sh</code> 依序打包 <code>/etc</code>、<code>/home</code>、<code>/var/lib/docker/volumes</code>，保存至日期資料夾，最後刪掉排序後較舊的資料夾，只保留 <strong>2 組</strong>。</p>
+<p>應注意：</p>
+<ol>
+<li>註解寫「每日／最近 2 天」，實際上沒有保證每日執行；現在兩組日期相隔 21 天。</li>
+<li>腳本沒有停 Gitea／PostgreSQL，也沒有 <code>pg_dump</code> 或一致性快照程序。若執行時資料庫運作中，直接 tar postgres 目錄不能保證可還原；若外部排程另外停機，本次未能確認。</li>
+<li>Gitea 用 bind mount，核心資料在 <code>/home/Gitea</code>，不在 <code>/var/lib/docker/volumes</code>。只拿 docker-volumes 壓縮檔去還原會缺少 Gitea。</li>
+<li>腳本未逐步檢查成功狀態，壓縮失敗後仍可能顯示完成並進行舊檔清理；應改善為全部驗證成功後才清理。</li>
+<li>備份含其他 home 資料與機密；不要放到所有人可下載的位置。</li>
+</ol>
+<p>PostgreSQL 的一般檔案拷貝備份需要資料庫停止，或採用具一致性保證的快照／專用備份機制；不能把運作中目錄的普通 tar 當成可用備份。<a href="https://www.postgresql.org/docs/14/backup-file.html">PostgreSQL 14 檔案備份要求</a></p>
+<p><code>coffee</code> 沒有個人 crontab；可讀系統 timer 未見專用 Gitea 備份；rsnapshot 的 cron 行全被註解，設定只指向 <code>/home/foo/bar/</code>。<strong>root crontab 尚未讀取，所以排程觸發來源仍待確認。</strong></p>
+<h3 id="73">7.3 建議備份政策</h3>
+<p>下列為待核准目標，不是目前已達成的承諾：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>建議</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>目標 RPO</td>
+<td>24 小時；重要專案若要求更低，需重新設計頻率及容量</td>
+</tr>
+<tr>
+<td>目標 RTO</td>
+<td>4 小時，須以實際演練驗證</td>
+</tr>
+<tr>
+<td>保留</td>
+<td>每日 7 組、每週 4 組、每月 6 組，依容量與公司政策調整</td>
+</tr>
+<tr>
+<td>存放</td>
+<td>本機暫存＋不同主機／儲存設備的加密副本＋離線或不可變副本</td>
+</tr>
+<tr>
+<td>成功條件</td>
+<td>命令成功、檔案完整、checksum 通過、外部副本完成、可還原演練通過</td>
+</tr>
+<tr>
+<td>責任</td>
+<td>維運負責執行，代理人覆核，PM 追蹤異常及演練</td>
+</tr>
+</tbody>
+</table></div>
+<p>若不能每天停機，規劃停止 Gitea 寫入後的 DB 邏輯備份與檔案備份，或由熟悉 PostgreSQL 的人設計一致性快照／PITR。<code>pg_dump</code> 只保證資料庫本身的一致性，不能自動協調 Git、LFS 與附件。<a href="https://www.postgresql.org/docs/14/app-pgdump.html">pg_dump 文件</a></p>
+<h2 id="8">8. 一致性備份作業程序</h2>
+<h3 id="81">8.1 適用條件</h3>
+<p>這是<strong>建議的停機冷備份程序，尚未在正式機執行或演練</strong>。適合目前單機、資料量不大的架構。備份期間網站、Git 與資料庫會停止；由管理員在核准時段逐段執行，不要把整章一次貼上。</p>
+<p>事前要有：可用 sudo、現場／第二條管理通道、足夠暫存空間、外部加密儲存、值班聯絡人。記錄使用者可接受的停機時間；若超過時限，優先恢復原服務並把本次備份標記失敗。</p>
+<h3 id="82">8.2 準備：仍未停服務</h3>
+<p>以下切換 root 是未來由人員執行的維護程序，不是本次 SSH 盤點操作。</p>
+<pre><code class="language-bash">sudo -i
+umask 077
+cd /home/Gitea
+docker compose -p gitea -f docker-compose.yml config --quiet
+df -h /var/backups
+du -sh config data postgres
+</code></pre>
+<p>確認沒有錯誤後，在<strong>同一個 root shell</strong>建立獨立目錄。此新目錄不同於舊腳本的自動清理目錄：</p>
+<pre><code class="language-bash">BACKUP_DIR=&quot;/var/backups/gitea-approved/$(date +%Y%m%d-%H%M%S)&quot;
+mkdir -p &quot;$BACKUP_DIR&quot;
+printf '%s\n' &quot;$BACKUP_DIR&quot;
+docker image inspect docker.gitea.com/gitea:1.23.5-rootless postgres:14 \
+  --format '{{.Id}} {{json .RepoDigests}}' &gt; &quot;$BACKUP_DIR/images.txt&quot;
+</code></pre>
+<p>映像名稱要依當次實際版本調整。建議將<strong>當時正在執行的精確 image ID</strong>用 <code>docker image save</code> 另存至受控外部儲存，記錄對應版本，避免災難時 registry 不可用。不要只記浮動的 <code>postgres:14</code> 標籤。</p>
+<h3 id="83">8.3 停止並確認</h3>
+<pre><code class="language-bash">docker compose -p gitea -f docker-compose.yml stop -t 60 server
+docker compose -p gitea -f docker-compose.yml stop -t 60 db
+docker inspect --format '{{.Name}} {{.State.Status}} exit={{.State.ExitCode}}' \
+  gitea-server-1 gitea-db-1
+docker logs --tail 30 gitea-db-1
+</code></pre>
+<p>兩個容器必須都停止，並確認 PostgreSQL 日誌有正常完成 shutdown。如果超時強制終止、退出狀態異常或資料庫沒有正常關閉，停止備份流程，交管理員處理；不要把 crash 狀態直接當成合格冷備份。</p>
+<h3 id="84">8.4 打包、驗證、恢復原服務</h3>
+<pre><code class="language-bash">tar --acls --xattrs --numeric-owner -czpf &quot;$BACKUP_DIR/gitea-cold.tar.gz&quot; \
+  -C /home/Gitea docker-compose.yml config data postgres gitea-access-rules.sh docs
+</code></pre>
+<p>立即檢查退出碼：</p>
+<pre><code class="language-bash">echo $?
+</code></pre>
+<p>只有 <code>0</code> 才能標記「打包成功」；非 0 要記錄錯誤。無論備份是否成功，都要依下列順序及健康檢查恢復原服務，避免因備份失敗讓正式站一直停機：</p>
+<pre><code class="language-bash">docker compose -p gitea -f docker-compose.yml start db
+docker exec gitea-db-1 pg_isready -U gitea -d gitea
+</code></pre>
+<p>等到資料庫回報 <code>accepting connections</code>，再執行：</p>
+<pre><code class="language-bash">docker compose -p gitea -f docker-compose.yml start server
+curl --max-time 10 -fsS http://127.0.0.1:3000/api/healthz
+docker compose -p gitea -f docker-compose.yml ps
+</code></pre>
+<p>服務恢復後，對已成功的備份做完整性檢查：</p>
+<pre><code class="language-bash">gzip -t &quot;$BACKUP_DIR/gitea-cold.tar.gz&quot;
+tar -tzf &quot;$BACKUP_DIR/gitea-cold.tar.gz&quot; &gt; &quot;$BACKUP_DIR/file-list.txt&quot;
+cd &quot;$BACKUP_DIR&quot;
+sha256sum gitea-cold.tar.gz images.txt &gt; SHA256SUMS
+sha256sum -c SHA256SUMS
+</code></pre>
+<p>每一步都須成功。壓縮與 checksum 驗證只證明檔案傳輸／格式完整，<strong>不是還原成功證明</strong>。另存必要主機設定；將備份以公司核准工具加密傳到不同設備，在目的端再驗 checksum。所有工作完成前不刪上一份合格備份。</p>
+<h3 id="85">8.5 備份紀錄格式</h3>
+<pre><code class="language-text">備份編號／操作人／覆核人：
+正式主機與應用版本／映像 digest：
+可信時間來源、停機起訖、資料截止時間：
+打包命令結果／檔案大小／SHA-256：
+外部副本位置（不填密碼）與驗證結果：
+網站、DB、Git 恢復結果：
+隔離還原演練日期與結果：
+異常、處理單號、下次改善：
+</code></pre>
+<h2 id="9">9. 異機還原與備援切換</h2>
+<h3 id="91">9.1 目前是否已經有備援？</h3>
+<p><strong>尚無足夠證據確認有可接手的整站備援。</strong>本機只有一顆可見磁碟；PostgreSQL 沒有連線中的 replication standby，<code>archive_mode=off</code>，本次也沒看到完整切換流程或外部一致性備份。</p>
+<p>近期 Gitea 日誌顯示 <code>cjw/ECMU</code> 與 <code>cjw/myXAMPP</code> 的 push mirror 連到 <code>10.253.114.250:3000</code> 失敗，訊息為無法連線；這是已確認的故障症狀，不足以判定是對方停機、防火牆或路由問題。本次未登入、掃描或修改 <code>.250</code>。</p>
+<p>即使 Git mirror 修好，也不會自動備份完整的使用者、權限、Issue、PR、附件、Packages、機密及主機設定；LFS 與其他 Git 擴充內容也要另外驗證。鏡像同步、備份、整站備援須分別管理。</p>
+<h3 id="92">9.2 建議的備援形態</h3>
+<p>先建立<strong>可還原的冷備機</strong>：準備相容 Linux、Docker／Compose、足夠磁碟及離線映像，每日取得已驗證的加密備份，至少每季演練。尚未需要自動切換前，不必急著做多台同時寫入同一份資料。</p>
+<p>若 PM 要求更短 RPO/RTO，再評估 DB replication、Git/LFS 檔案一致性、共享儲存、故障判斷與避免雙主寫入的機制，另立專案；不能只複製 Compose 就稱為高可用。</p>
+<h3 id="93">9.3 先做隔離還原演練</h3>
+<p>以下程序只適用第 8 章產出的 <code>gitea-cold.tar.gz</code>，<strong>不直接適用舊的 home-backup 或 rootfs.fsa</strong>。</p>
+<ol>
+<li>在隔離新主機安裝相容 Docker／Compose；正式機保持不動。使用新 IP，不占用 <code>.160</code>。</li>
+<li>防火牆只讓演練人員連入，並限制演練機對外連線，避免還原後的鏡像、Webhook、排程或郵件碰到正式系統。</li>
+<li>複製備份與 checksum，驗證全部通過；檢查 archive 檔案清單沒有非預期路徑。</li>
+<li>使用備份記錄的精確映像版本／digest，或載入保留的映像；不要直接拉取 latest。</li>
+<li>以 root 在<strong>空的新主機目標目錄</strong>還原；若 <code>/home/Gitea</code> 已存在，停止並由管理員確認，不覆蓋。</li>
+</ol>
+<p>範例（<code>RESTORE_DIR</code> 必須改為新主機上已驗證的備份位置）：</p>
+<pre><code class="language-bash">sudo -i
+RESTORE_DIR=/srv/restore-input/請替換成備份編號
+cd &quot;$RESTORE_DIR&quot;
+sha256sum -c SHA256SUMS
+test ! -e /home/Gitea
+</code></pre>
+<p><strong>確認最後一個命令退出碼為 0 才繼續</strong>：</p>
+<pre><code class="language-bash">mkdir -p /home/Gitea
+tar --acls --xattrs --numeric-owner -xzpf &quot;$RESTORE_DIR/gitea-cold.tar.gz&quot; \
+  -C /home/Gitea
+cd /home/Gitea
+docker compose -p gitea -f docker-compose.yml config --quiet
+</code></pre>
+<ol start="6">
+<li>核對數字 UID/GID。Gitea 使用 1000；postgres 原目錄 UID 999。保留原始擁有者，不因新主機顯示不同使用者名稱就遞迴改權限。</li>
+<li>在演練副本調整 <code>ROOT_URL</code>、<code>DOMAIN</code>、<code>SSH_DOMAIN</code>、監聽埠及精確映像引用；不要改正式機。恢復相同 Gitea／PostgreSQL 版本，先驗證成功再談升級。</li>
+<li>先啟動 DB，待可連線後再啟動應用：</li>
+</ol>
+<pre><code class="language-bash">docker compose -p gitea -f docker-compose.yml up -d db
+docker compose -p gitea -f docker-compose.yml exec -T db pg_isready -U gitea -d gitea
+</code></pre>
+<p>DB 就緒後：</p>
+<pre><code class="language-bash">docker compose -p gitea -f docker-compose.yml up -d server
+curl --max-time 10 -fsS http://127.0.0.1:3000/api/healthz
+</code></pre>
+<p>啟動時維持外連隔離；由管理員停用演練副本中的 mirror／Webhook 等背景整合，再逐項驗證。保留原 app.ini 的機密及 SSH host key，可維持相容性；但演練機也因此含正式機密，完成後要受控封存或銷毀。</p>
+<h3 id="94">9.4 還原驗收清單</h3>
+<ul>
+<li>[ ] Gitea 及 DB 正常啟動，沒有反覆重新啟動。</li>
+<li>[ ] healthz 的 database/cache 通過。</li>
+<li>[ ] 管理員及一般帳號登入正常；MFA、復原途徑可用。</li>
+<li>[ ] 使用者／組織／儲存庫數量與該次備份清冊一致。</li>
+<li>[ ] 抽驗重要專案的分支、Tag、Commit、Issue、PR、Wiki、附件、Release、LFS、Packages。</li>
+<li>[ ] 從核准測試電腦 clone，並在<strong>測試專案</strong> push／建立 PR。</li>
+<li>[ ] Read 帳號無法寫入，受保護分支規則正確。</li>
+<li>[ ] SSH host key 變更有正式核對，不要求使用者盲目接受陌生指紋。</li>
+<li>[ ] 鏡像、Webhook、郵件及排程未誤觸正式外部系統。</li>
+<li>[ ] 記錄實際還原耗時、資料截止點及未恢復項目，由 PM 簽核。</li>
+</ul>
+<h3 id="95">9.5 正式切換與回切</h3>
+<p>PM 宣布維護開始，停止使用者寫入；取得最後一致性備份並驗證。先確保原服務不再接受寫入，才由網管切換 IP／DNS／入口。<strong>不能讓舊機與新機同時持有 <code>.160</code>，也不能讓兩邊各自接受新提交。</strong></p>
+<p>新站驗收通過後才宣布恢復；舊站保留為隔離的回復來源。若新站已有使用者寫入後才要回切，需先規劃資料回收與一致性處理，不能直接開啟舊站而丟掉新資料。NAT、NTP、apt proxy 等附帶功能須另外列入切換清單。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#7">7. 備份現況與改善</a><a href="#8">8. 一致性備份作業程序</a><a href="#9">9. 異機還原與備援切換</a></aside></div><footer class="footer"><span>依 2026.09.21–22 實機盤點與部署紀錄整理</span><span>文件快照 · 非即時監控</span></footer></main></div></body></html>

@@ -1,0 +1,272 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="票務中心系統組 Gitea 維運知識庫：實機架構、巡檢、排程、備份還原與新人交接。"><title>權限與交接 · Gitea 維運知識庫</title><link rel="icon" type="image/svg+xml" href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"%3E%3Crect width="40" height="40" rx="10" fill="%23102c3c"/%3E%3Cpath d="m10 12 8 8-8 8m12 0h9" fill="none" stroke="%237ce4d4" stroke-width="3"/%3E%3C/svg%3E'><link rel="stylesheet" href="styles.css"><script src="site.js" defer></script></head><body><a class="skip" href="#main">跳至主要內容</a><aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a><p class="nav-label">工作指南</p><nav class="nav" aria-label="知識庫導覽"><a href="index.html"><span>00</span>總覽</a><a href="start.html"><span>01</span>新手入門</a><a href="system.html"><span>02</span>系統與網路</a><a href="daily.html"><span>03</span>巡檢與排查</a><a href="backup.html"><span>04</span>備份與還原</a><a href="schedule.html"><span>05</span>排程管理</a><a href="access.html" aria-current="page"><span>06</span>權限與交接</a></nav><div class="side-bottom"><strong>票務中心系統組</strong>coffee · 維運文件<br>文件基準 2026.09.22</div></aside><div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>權限與交接</b></div><div class="edition">交接版 <strong>01</strong></div></header><main id="main" class="content"><div class="doc-title"><p class="eyebrow">OPERATIONS HANDBOOK</p><h1>權限與交接</h1><p>以個人帳號與最小權限管理專案，讓接手責任可追蹤。</p></div><div class="doc-layout" style="margin-top:24px"><article class="article"><h2 id="5">5. 帳號、權限與專案治理</h2>
+<h3 id="51">5.1 四層權限</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>層次</th>
+<th>管什麼</th>
+<th>應授予誰</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>網路白名單</td>
+<td>能否接觸服務埠</td>
+<td>核准的來源網路／設備</td>
+</tr>
+<tr>
+<td>Linux SSH／sudo</td>
+<td>主機、設定、檔案與系統服務</td>
+<td>少數具名維運人員</td>
+</tr>
+<tr>
+<td>Docker</td>
+<td>能操作容器及主機掛載資料</td>
+<td>視同高權限維運，不給一般開發者</td>
+</tr>
+<tr>
+<td>Gitea 組織／團隊／儲存庫</td>
+<td>原始碼、Issue、PR 及專案管理</td>
+<td>依工作職責授權</td>
+</tr>
+</tbody>
+</table></div>
+<p>本機 <code>coffee</code> 屬於 <code>sudo</code>、<code>docker</code>、<code>adm</code> 等群組，可 sudo 執行所有命令（大多需要密碼），另可免密碼執行 <code>/sbin/shutdown</code>。Docker 群組實質上具有 root 等級能力，不能用它當作「只看 Docker」的權限。<a href="https://docs.docker.com/engine/install/linux-postinstall/">Docker 權限說明</a></p>
+<h3 id="52-linux">5.2 目前 Linux 與資料檔權限問題</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>路徑／項目</th>
+<th>盤點值</th>
+<th>管理解讀</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/home/coffee/.ssh</code></td>
+<td>700，1000:1000</td>
+<td>正常的個人 SSH 目錄限制</td>
+</tr>
+<tr>
+<td><code>authorized_keys</code></td>
+<td>600，1000:1000</td>
+<td>僅所有者可讀寫；這是檔案，不能 <code>cd</code> 進去</td>
+</tr>
+<tr>
+<td><code>/home/Gitea</code>、<code>config</code></td>
+<td>766，1000:1000</td>
+<td>目錄權限不尋常；群組與其他人沒有 traverse 的 x，不能簡化解讀為所有人都能進入</td>
+</tr>
+<tr>
+<td><code>config/app.ini</code></td>
+<td>766，0:0</td>
+<td>機密設定檔不應有廣泛寫入權及 executable bit；須連同父目錄與容器 UID 一起修正</td>
+</tr>
+<tr>
+<td><code>docker-compose.yml</code></td>
+<td>766，1000:1000</td>
+<td>含 DB 密碼；應縮小讀寫範圍</td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td>777，1000:1000</td>
+<td>容器資料目錄權限過寬</td>
+</tr>
+<tr>
+<td><code>gitea-access-rules.sh</code></td>
+<td>777，0:0</td>
+<td>高權限執行腳本可被非 root 改寫，列為優先修正</td>
+</tr>
+<tr>
+<td><code>postgres</code></td>
+<td>700，999:1000</td>
+<td>數字 UID 999 對應容器 postgres；主機顯示 dnsmasq 只是同 UID 名稱，不代表資料屬於 DNS 服務</td>
+</tr>
+</tbody>
+</table></div>
+<p>建議由管理員在測試／維護時段逐項修正：Gitea 的 config/data 需讓 UID 1000 正常存取；app.ini 可朝 600 且讓執行 UID 正確持有的方向設計；Compose 只給部署管理者讀寫；防火牆腳本應 root 持有且不可讓一般帳號改寫。<strong>不要對整個 <code>/home/Gitea</code> 執行同一組遞迴 chown／chmod</strong>，因為 PostgreSQL、Git hooks、SSH 機密與一般資料的需求不同。</p>
+<p>主機 <code>sshd_config</code> 明文設定 <code>PermitRootLogin yes</code>、<code>PasswordAuthentication yes</code>、<code>X11Forwarding yes</code>。這是檔案內容，尚未用 root 執行 <code>sshd -T</code> 驗證完整生效值。改善時先準備兩個可用的具名管理帳號與金鑰、驗證 sudo 及主控台，再收斂 root／密碼登入；不能先關掉唯一能登入的方式。</p>
+<h3 id="53">5.3 新人加入流程</h3>
+<ol>
+<li>PM 指定專案、直屬負責人、需要的權限及有效期間。</li>
+<li>網管處理連線來源；一般開發者不用申請 Linux 或 Docker 權限。</li>
+<li>Gitea 管理員確認帳號，加入正確組織及團隊；新手先 Read，確需提交才授 Write。</li>
+<li>使用者在自己的電腦建立個人 SSH 金鑰，只把<strong>公鑰</strong>加入 Gitea「設定 → SSH／GPG 金鑰」；私鑰不傳給同事。</li>
+<li>啟用雙因素驗證並安全保存復原碼。因主機校時異常，先完成 NTP 修復，再集中推行 TOTP，避免大量無法登入。</li>
+<li>用指定測試專案驗證 clone、分支、PR。授 Write 的人驗證可提交測試分支；授 Read 的人應確認不能推送。</li>
+<li>讀取專案 README、建置方法、部署方式與負責人資訊；完成交接清單。</li>
+</ol>
+<p>目前 SMTP 未啟用，不要承諾「忘記密碼一定能收重設信」。管理員須建立可追溯的身分確認及帳號復原流程。</p>
+<h3 id="54-gitea">5.4 建議的 Gitea 權限配置</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>身分</th>
+<th>建議權限</th>
+<th>不需要的權限</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>參與規格／查閱的人</td>
+<td>專案 Read，加上需要的 Issue／PR 單元權限</td>
+<td>Linux、Docker、站台管理</td>
+</tr>
+<tr>
+<td>開發者</td>
+<td>指定 repository 的 Code Write</td>
+<td>全組織 Owner、站台管理</td>
+</tr>
+<tr>
+<td>專案維護者</td>
+<td>需要時給 repository Admin</td>
+<td>全站管理，除非兼任站台維運</td>
+</tr>
+<tr>
+<td>組織負責人</td>
+<td>組織 Owner，至少建立代理人</td>
+<td>不因此自動取得主機 root</td>
+</tr>
+<tr>
+<td>站台管理員</td>
+<td>少量具名帳號、MFA、定期稽核</td>
+<td>共用密碼／共用權杖</td>
+</tr>
+</tbody>
+</table></div>
+<p>Gitea 可分別設定 Code、Issues、Pull Requests 等單元權限，授權後仍要用實際帳號驗證。<a href="https://docs.gitea.com/1.23/usage/permissions/">Gitea 1.23 權限文件</a></p>
+<p>建議關鍵專案使用組織持有，降低綁定單一個人帳號的風險。對 main／master／正式版本分支設定保護，要求 PR、至少一位審查者，限制 force push 及刪除；具體規則由各專案負責人核准。目前沒有註冊 Runner，不要把尚未建立的 CI 檢查設為必須通過而造成無法合併。</p>
+<h3 id="55">5.5 離職、轉調與金鑰管理</h3>
+<p>離職當日先停用 Gitea 帳號、移除組織／團隊權限、撤銷個人 token 與不再使用的金鑰，再交接個人名下的重要專案、Webhook、鏡像認證與機器帳號。另由系統管理員處理 Linux 帳號、sudo／Docker 群組與 authorized_keys；網管撤銷不再需要的來源白名單。</p>
+<p>不可為了交接直接刪除唯一管理員、重要專案擁有者或尚未轉移的資料。復原碼、DB 密碼、SMTP 密碼、OAuth/LFS/JWT 等機密放在受控密碼庫；備份也必須保留必要機密，否則還原後部分功能可能失效。</p>
+<p>本次為 Codex 建立的 SSH 公鑰只用於本次授權工作。它沒有被證實受到 SSH forced-command 的技術限制；「唯讀」是此次操作範圍，不等於 coffee 帳號本身是唯讀帳號。工作結束後由管理員決定撤銷或納入正式金鑰清冊。</p>
+<h2 id="12">12. 交接、責任分工與改善清單</h2>
+<h3 id="121">12.1 專案責任表</h3>
+<p>姓名、代理人與聯絡方式由 PM 補齊；不要只寫「資訊人員」。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>角色</th>
+<th>責任</th>
+<th>正／代理人</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PM／服務負責人</td>
+<td>需求、權限核准、維護公告、RPO/RTO、風險排序</td>
+<td>待填</td>
+</tr>
+<tr>
+<td>Linux／Docker 管理員</td>
+<td>主機、容器、備份、還原、更新、事件處理</td>
+<td>待填</td>
+</tr>
+<tr>
+<td>Gitea 站台管理員</td>
+<td>帳號、組織、機密、應用設定、權限稽核</td>
+<td>待填；目前只確認 1 個管理員帳號</td>
+</tr>
+<tr>
+<td>網管</td>
+<td>IP、DNS、VLAN、ACL、防火牆、NTP、切換</td>
+<td>待填</td>
+</tr>
+<tr>
+<td>各專案維護者</td>
+<td>程式碼審查、分支保護、專案文件及驗收</td>
+<td>每個專案各自指定</td>
+</tr>
+<tr>
+<td>備機／鏡像端負責人</td>
+<td><code>.250</code> 角色、容量、同步及接手測試</td>
+<td>待填，不預設其已是合格備機</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="122">12.2 優先改善項目</h3>
+<p>建議時程以交接開始日計，需依團隊資源核准，沒有在本次自動套用。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>優先級／建議期限</th>
+<th>項目</th>
+<th>驗收標準</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1／1 週內</td>
+<td>建立可信、異機保存的一致性備份</td>
+<td>完成一次隔離完整還原；可量測 RPO/RTO</td>
+</tr>
+<tr>
+<td>P1／1 週內</td>
+<td>處理 NTP 無上游與時間差</td>
+<td>有可信 selected source；主機與標準時間差符合政策</td>
+</tr>
+<tr>
+<td>P1／1 週內</td>
+<td>調查 <code>.250</code> 推送鏡像失敗</td>
+<td>兩個已知專案成功同步；確認鏡像涵蓋範圍與責任人</td>
+</tr>
+<tr>
+<td>P1／1 週內</td>
+<td>收斂防火牆腳本與機密檔權限</td>
+<td>非核准帳號不可改寫；Gitea/DB 啟動及備份仍正常</td>
+</tr>
+<tr>
+<td>P1／1 週內</td>
+<td>確認公開範圍、註冊與管理員代理</td>
+<td>87 個非私有儲存庫分類核准；至少有可用代理管理流程</td>
+</tr>
+<tr>
+<td>P1／2 週內</td>
+<td>校時後啟用管理員 MFA，保護關鍵分支</td>
+<td>MFA 復原演練成功；關鍵分支禁止未審核寫入</td>
+</tr>
+<tr>
+<td>P1／2 週內</td>
+<td>驗證防火牆、IPv6、重開機持久化</td>
+<td>允許來源通過、拒絕來源失敗，並保存證據</td>
+</tr>
+<tr>
+<td>P1／終止支援前</td>
+<td>PostgreSQL 14 遷移計畫</td>
+<td>2026-11-12 前完成受支援版本切換及還原演練</td>
+</tr>
+<tr>
+<td>P2／1 個月內</td>
+<td>HTTPS、Gitea 更新與 DB 最小權限</td>
+<td>測試通過、核准維護、可回復</td>
+</tr>
+<tr>
+<td>P2／1 個月內</td>
+<td>自動監控、日誌輪替、備份失敗告警</td>
+<td>模擬失敗時指定人收到通知</td>
+</tr>
+<tr>
+<td>P2／1 個月內</td>
+<td>確認頻繁開機原因與 UPS／磁碟健康</td>
+<td>有事件結論與電力／硬碟檢查紀錄</td>
+</tr>
+<tr>
+<td>P3／1 個月內</td>
+<td>XAMPP 遺留資源及多用途服務整頓</td>
+<td>找到 owner、依資料保留政策處理，不直接清掉</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="123">12.3 新人第一天檢核</h3>
+<ul>
+<li>[ ] 已知道 PM、管理員、代理人及緊急聯絡方式。</li>
+<li>[ ] 能區分 Linux SSH 22、Git SSH 2222、Web 3000。</li>
+<li>[ ] 能用個人帳號看到應看的專案，不能看到不應看的資料。</li>
+<li>[ ] 開發者能 clone 測試專案、建立分支及 PR。</li>
+<li>[ ] 維運人員能執行第 6 章唯讀巡檢並解釋結果。</li>
+<li>[ ] 知道最新<strong>驗證成功</strong>的備份位置及還原負責人。</li>
+<li>[ ] 知道機密在哪裡申請，不在聊天、Git 或手冊貼密碼。</li>
+<li>[ ] 已讀取所屬專案的建置、部署、測試及回復文件。</li>
+</ul>
+<h3 id="124">12.4 交接完成條件</h3>
+<p>只有「能登入」不代表交接完成。代理人必須獨立完成一次巡檢、一次測試專案權限驗證及一次隔離還原；PM 確認服務範圍、維護公告流程、RPO/RTO 與事件責任已有人承擔。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#5">5. 帳號、權限與專案治理</a><a href="#12">12. 交接、責任分工與改善清單</a></aside></div><footer class="footer"><span>依 2026.09.21–22 實機盤點與部署紀錄整理</span><span>文件快照 · 非即時監控</span></footer></main></div></body></html>

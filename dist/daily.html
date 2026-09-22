@@ -1,0 +1,176 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="票務中心系統組 Gitea 維運知識庫：實機架構、巡檢、排程、備份還原與新人交接。"><title>巡檢與排查 · Gitea 維運知識庫</title><link rel="icon" type="image/svg+xml" href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"%3E%3Crect width="40" height="40" rx="10" fill="%23102c3c"/%3E%3Cpath d="m10 12 8 8-8 8m12 0h9" fill="none" stroke="%237ce4d4" stroke-width="3"/%3E%3C/svg%3E'><link rel="stylesheet" href="styles.css"><script src="site.js" defer></script></head><body><a class="skip" href="#main">跳至主要內容</a><aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a><p class="nav-label">工作指南</p><nav class="nav" aria-label="知識庫導覽"><a href="index.html"><span>00</span>總覽</a><a href="start.html"><span>01</span>新手入門</a><a href="system.html"><span>02</span>系統與網路</a><a href="daily.html" aria-current="page"><span>03</span>巡檢與排查</a><a href="backup.html"><span>04</span>備份與還原</a><a href="schedule.html"><span>05</span>排程管理</a><a href="access.html"><span>06</span>權限與交接</a></nav><div class="side-bottom"><strong>票務中心系統組</strong>coffee · 維運文件<br>文件基準 2026.09.22</div></aside><div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>巡檢與排查</b></div><div class="edition">交接版 <strong>01</strong></div></header><main id="main" class="content"><div class="doc-title"><p class="eyebrow">OPERATIONS HANDBOOK</p><h1>巡檢與排查</h1><p>先蒐集證據，再判斷是用戶端、網路、應用或資料庫問題。</p></div><div class="doc-layout" style="margin-top:24px"><article class="article"><h2 id="6">6. 每日巡檢與例行維護</h2>
+<h3 id="61">6.1 五分鐘巡檢</h3>
+<p>在 Linux 主機執行，均為唯讀：</p>
+<pre><code class="language-bash">hostname
+date -Is
+uptime
+df -h /
+df -ih /
+free -h
+docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+curl --max-time 10 -fsS http://127.0.0.1:3000/api/healthz
+chronyc tracking
+chronyc sources -n
+systemctl --failed --no-pager
+</code></pre>
+<p>判讀：Gitea 與 DB 應 Running；healthz 應為 <code>pass</code>，且 database/cache 檢查通過；磁碟及 inode 不應接近滿；NTP 應有可信任且已選用的來源。最後仍要由使用者端確認網站與 Git 存取，因為 localhost 檢查不會驗證外部白名單。</p>
+<h3 id="62">6.2 維護週期與告警建議</h3>
+<p>以下是建議門檻，需由 PM 與維運確認，尚未部署自動監控。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>頻率</th>
+<th>工作</th>
+<th>判斷／交付</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>每日</td>
+<td>healthz、磁碟、時間、容器、最新備份與鏡像結果</td>
+<td>失敗需派單，不只記「檢查完成」</td>
+</tr>
+<tr>
+<td>每週</td>
+<td>受限來源外部連線測試、異地備份抽驗、日誌錯誤、更新清單</td>
+<td>留存結果及負責人</td>
+</tr>
+<tr>
+<td>每月</td>
+<td>權限清冊、停用帳號、token 到期、容量趨勢</td>
+<td>PM 與管理員共同簽核</td>
+</tr>
+<tr>
+<td>每季</td>
+<td>隔離環境完整還原、代理管理員演練</td>
+<td>量測 RTO、確認 RPO、更新手冊</td>
+</tr>
+<tr>
+<td>每次變更後</td>
+<td>網站、Git、LFS、權限、備份及網路限制</td>
+<td>全部通過才結案</td>
+</tr>
+</tbody>
+</table></div>
+<p>建議磁碟使用率 80% 預警、90% 緊急；新備份超過 26 小時未完成（採每日備份時）告警；healthz 連續失敗約 5 分鐘告警；NTP 長時間無有效來源、鏡像失敗、管理員登入異常也要通知指定人員。</p>
+<h3 id="63">6.3 日誌與容量</h3>
+<pre><code class="language-bash">docker logs --since 1h --tail 200 gitea-server-1
+docker logs --since 1h --tail 200 gitea-db-1
+journalctl -u docker -b --no-pager -n 100
+journalctl -u ssh -b --no-pager -n 100
+journalctl --disk-usage
+</code></pre>
+<p>目前兩個容器使用 <code>json-file</code> 且 log options 為空，未見輪替上限。建議在 Compose 的兩個 service 分別設定例如 <code>max-size: 10m</code>、<code>max-file: "5"</code>，經測試重建後驗證，並依保留需求把重要日誌送到外部系統。不要直接 truncate Docker 正在寫入的檔案。<a href="https://docs.docker.com/engine/install/linux-postinstall/">Docker 日誌建議</a></p>
+<h3 id="64">6.4 服務範圍與電力</h3>
+<p>由管理員確認 apt-cacher-ng、NAT、NTP、CUPS、Avahi、桌面與遠端桌面功能是否仍有需求，再排程縮減；本次沒有停用任何服務。確認 UPS、硬碟 SMART、備機規格、機房位置及開機後服務自動恢復，這些不能從「容器 restart: always」推論為已具備。</p>
+<h2 id="11">11. 常見故障排查</h2>
+<h3 id="111">11.1 排查原則</h3>
+<p>先確認影響範圍：只有一人、一個網段、一個專案，還是所有服務？記錄發生時間與時區；目前主機時鐘有偏差，與其他設備對照時要註明。收集最少必要證據後再決定是否變更。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症狀</th>
+<th>先查</th>
+<th>下一步</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>網頁打不開</td>
+<td>Windows 3000 埠測試；主機 localhost healthz</td>
+<td>本機正常而遠端失敗，查白名單／路由；本機也失敗再查容器與 DB</td>
+</tr>
+<tr>
+<td>Linux SSH 登入失敗</td>
+<td>是否用 22、正確帳號／金鑰、本機私鑰可讀</td>
+<td>伺服器接受公鑰但簽署失敗時先查用戶端，不急著重編 authorized_keys</td>
+</tr>
+<tr>
+<td>Git SSH 失敗</td>
+<td>是否用 2222 及 <code>git</code>；公鑰是否加在 Gitea</td>
+<td>查看實際 clone URL 與 repository 權限；不把 Linux 公鑰授權當成 Gitea 授權</td>
+</tr>
+<tr>
+<td>DB 無法連線</td>
+<td><code>docker ps</code>、DB 日誌、磁碟、<code>pg_isready</code></td>
+<td>檢查 <code>db:5432</code> 與 Compose／app.ini 設定，禁止直接改資料表試運氣</td>
+</tr>
+<tr>
+<td>磁碟接近滿</td>
+<td><code>df -h</code>、<code>df -ih</code>、journal、備份與容器日誌容量</td>
+<td>管理員确认保留政策後清理，不刪 DB/WAL 或未確認用途的 volume</td>
+</tr>
+<tr>
+<td>備份有檔案卻不能還原</td>
+<td>命令退出碼、壓縮檢查、checksum、是否一致性備份</td>
+<td>用隔離環境演練；不要在正式資料上試解壓</td>
+</tr>
+<tr>
+<td>鏡像同步失敗</td>
+<td>目的端服務、來源到目的端路由／ACL、時間</td>
+<td>先排可達性，再查認證；不要重設密碼掩蓋連線問題</td>
+</tr>
+<tr>
+<td>TOTP／token 時效異常</td>
+<td>NTP、時區、主機與使用者時間</td>
+<td>先核對可信時間，再處理帳號復原</td>
+</tr>
+<tr>
+<td>開機後 Gitea 未恢復</td>
+<td>Docker service、容器 restart policy、DB readiness、網路</td>
+<td>依 DB → server 次序檢查，不連續硬重開</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="112-postgresql">11.2 PostgreSQL 只讀確認</h3>
+<pre><code class="language-bash">docker exec gitea-db-1 pg_isready -U gitea -d gitea
+docker exec -e PGOPTIONS='-c default_transaction_read_only=on -c statement_timeout=5000' \
+  gitea-db-1 psql -X -U gitea -d gitea \
+  -c 'SELECT current_database(), current_user, pg_size_pretty(pg_database_size(current_database()));'
+</code></pre>
+<p>此命令沿用容器既有本地認證，不把密碼寫到命令列。如果認證策略日後改變，透過正式機密管理方式處理，不要臨時改成無密碼信任。</p>
+<h3 id="113">11.3 本次已觀察到的日誌事件</h3>
+<p>Gitea 近期抽樣有 4 筆 error，對應兩個儲存庫各兩筆推送鏡像失敗；另有 5 筆啟動時 schema default 差異 warning。當時 localhost 首頁 HTTP 200、healthz pass，DB 近期抽樣沒有 ERROR/FATAL/PANIC。這是有限時間窗的結果，不代表全部歷史日誌都沒有問題。</p>
+<p>schema warning 要在升級測試時追蹤，不手工改 DB 預設值。鏡像失敗應另開事件單，指派 <code>.160</code> 維運、<code>.250</code> 負責人及網管共同排查。</p>
+<h3 id="114">11.4 事件回報格式</h3>
+<pre><code class="language-text">發生／發現時間（含時區與時鐘偏差說明）：
+影響對象與功能：
+來源 IP、服務埠、專案（必要時遮蔽）：
+錯誤訊息與有限範圍日誌：
+網站／healthz／容器／磁碟／DB 狀態：
+最近變更及備份時間：
+已做的檢查、是否有執行變更：
+事件負責人、下一次回報時間、結案條件：
+</code></pre>
+<h2 id="10">10. 更新、重啟與回復程序</h2>
+<h3 id="101">10.1 版本管理優先事項</h3>
+<p>目前 Gitea 1.23.5、PostgreSQL 14.18 都應納入更新評估。PostgreSQL 官方版本政策列出 14 的終止支援日期為 <strong>2026-11-12</strong>，須提前安排大版本遷移，不只更新容器標籤。<a href="https://www.postgresql.org/support/versioning/">PostgreSQL 支援政策</a></p>
+<p>先在隔離副本驗證 Gitea 支援的升級路徑、DB 相容性及重大變更，再排正式升級。本機 Docker 為 Ubuntu 套件來源的 <code>docker.io</code>，不要未評估就混裝另一套來源。<code>unattended-upgrades</code> enabled 也不代表 Gitea 映像會自動更新。</p>
+<h3 id="102">10.2 一般重啟</h3>
+<p><strong>維護變更：</strong>先確認沒有備份、還原或使用者關鍵操作，再於核准時間執行。僅應用異常且 DB 正常時，先處理 Gitea，不要整台主機重開。</p>
+<pre><code class="language-bash">cd /home/Gitea
+docker compose -p gitea -f docker-compose.yml restart server
+curl --max-time 10 -fsS http://127.0.0.1:3000/api/healthz
+docker logs --since 5m --tail 100 gitea-server-1
+</code></pre>
+<p>需整組重啟時，先停 server，再停 db；先啟動 db 並確認就緒，再啟動 server，順序同第 8 章。<code>depends_on</code> 目前只要求 DB service 已啟動，不保證資料庫已就緒。</p>
+<h3 id="103-gitea">10.3 Gitea 升級</h3>
+<ol>
+<li>PM 核准維護時段、目標版本及回復時限。</li>
+<li>完成一致性備份與隔離還原驗證，記錄原映像 digest。</li>
+<li>僅調整 <code>server</code> 的映像至已驗證版本；維持 rootless 系列，避免無意改變資料路徑。</li>
+<li>驗證 Compose 後，只更新應用服務，避免順便拉動 <code>postgres:14</code>。</li>
+</ol>
+<pre><code class="language-bash"># 僅限已完成備份、測試及修改目標版本後的維護時段
+cd /home/Gitea
+docker compose -p gitea -f docker-compose.yml config --quiet
+docker compose -p gitea -f docker-compose.yml pull server
+docker compose -p gitea -f docker-compose.yml up -d --no-deps server
+</code></pre>
+<ol start="5">
+<li>檢查 migration 日誌、網站、Git、LFS、權限及整合功能。</li>
+<li>若失敗，先停止新版本寫入。資料庫若已遷移，不能只換回舊映像；應用第 9 章還原同時間點的設定、檔案與 DB，並告知可能遺失升級後資料。<a href="https://docs.gitea.com/1.23/installation/upgrade-from-gitea/">Gitea 升級說明</a></li>
+</ol>
+<h3 id="104-postgresql">10.4 PostgreSQL 更新</h3>
+<p>同一 major 的小版本與跨 major 是不同工作。<code>postgres:14</code> 是浮動標籤，下一次 pull 可能取得新小版本；應測試後固定精確版本／digest。跨到 15、16 等不能只改映像標籤後直接沿用舊資料目錄，需依 PostgreSQL 正式升級方法與 Gitea 相容性規劃遷移。</p>
+<p>資料庫應用帳號 <code>gitea</code> 目前 <code>rolsuper=true</code>、可建角色及 DB，權限偏高。降低權限要先盤點物件擁有者及 Gitea migration 需求，先在測試副本驗證，不可直接剝奪權限造成升級失敗。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#6">6. 每日巡檢與例行維護</a><a href="#11">11. 常見故障排查</a><a href="#10">10. 更新、重啟與回復程序</a></aside></div><footer class="footer"><span>依 2026.09.21–22 實機盤點與部署紀錄整理</span><span>文件快照 · 非即時監控</span></footer></main></div></body></html>

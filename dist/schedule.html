@@ -1,0 +1,446 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="票務中心系統組 Gitea 維運知識庫：實機架構、巡檢、排程、備份還原與新人交接。"><title>排程管理 · Gitea 維運知識庫</title><link rel="icon" type="image/svg+xml" href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"%3E%3Crect width="40" height="40" rx="10" fill="%23102c3c"/%3E%3Cpath d="m10 12 8 8-8 8m12 0h9" fill="none" stroke="%237ce4d4" stroke-width="3"/%3E%3C/svg%3E'><link rel="stylesheet" href="styles.css"><script src="site.js" defer></script></head><body><a class="skip" href="#main">跳至主要內容</a><aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a><p class="nav-label">工作指南</p><nav class="nav" aria-label="知識庫導覽"><a href="index.html"><span>00</span>總覽</a><a href="start.html"><span>01</span>新手入門</a><a href="system.html"><span>02</span>系統與網路</a><a href="daily.html"><span>03</span>巡檢與排查</a><a href="backup.html"><span>04</span>備份與還原</a><a href="schedule.html" aria-current="page"><span>05</span>排程管理</a><a href="access.html"><span>06</span>權限與交接</a></nav><div class="side-bottom"><strong>票務中心系統組</strong>coffee · 維運文件<br>文件基準 2026.09.22</div></aside><div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>排程管理</b></div><div class="edition">交接版 <strong>01</strong></div></header><main id="main" class="content"><div class="doc-title"><p class="eyebrow">OPERATIONS HANDBOOK</p><h1>排程管理</h1><p>新版排程已部署。保留原維護時段，加入一致性備份、失敗復原與關機保護。</p></div><div class="doc-layout" style="margin-top:24px"><article class="article"><blockquote>
+<p>主機：<code>coffee@10.253.114.160</code><br />
+盤點日期：2026-09-21；更新：2026-09-22；版本：1.2<br />
+<strong>狀態：正式 root 排程已安裝，程式與設定雜湊核對一致，cron 及 Gitea 健康檢查正常。15 項 Linux 測試通過；首次正式備份、備機傳輸與還原仍待驗收。</strong></p>
+</blockquote>
+<h2 id="1">1. 結論</h2>
+<p>原排程包含每日 22:00 關機、週六 09:00 備份，以及平日 20:30 同步 Gitea 至 <code>192.168.1.3</code>。已完成逐行檢查、修正套件、回復程序及測試；使用者已同意平日 20:30 可短暫停止 Gitea／PostgreSQL，以製作一致性備份。</p>
+<p>最明確的錯誤是原同步指令含未跳脫的 <code>%</code>，會被 cron 截斷。其他問題包括資料庫熱複製、管線掩蓋錯誤、失敗後仍刪舊備份，以及 22:00 關機可能中斷尚未結束的備份。</p>
+<p>修正後保留原時段，但不再直接覆寫備機的 <code>/home/Gitea</code>。改成先建立一致性封存檔、恢復服務，再傳到備機獨立備份目錄並驗證 checksum。</p>
+<p><strong>2026-09-22 首次安裝在備機檢查階段停止。使用者隨後確認備機尚未開機，指示先假設其正常；因此新增 <code>--defer-standby-check</code>，允許先完成本機安裝。這是部署前提假設，不是備機已驗證。使用者已執行修訂版並回報 Installed；安裝器完成排程安裝與讀回比對。</strong></p>
+<h2 id="2">2. 本次實際完成與未完成</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>狀態</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>取得原 root 排程</td>
+<td>完成；來源為使用者提供的 <code>sudo crontab -l</code> 輸出</td>
+</tr>
+<tr>
+<td>讀取既有備份腳本與相關狀態</td>
+<td>完成</td>
+</tr>
+<tr>
+<td>修正排程及必要程式</td>
+<td>完成</td>
+</tr>
+<tr>
+<td>Linux 測試</td>
+<td>15／15 通過；模擬服務操作，不停止正式容器</td>
+</tr>
+<tr>
+<td>套件上傳與 SHA-256 驗證</td>
+<td>完成</td>
+</tr>
+<tr>
+<td>使用者執行安裝器</td>
+<td>已成功執行修訂版，明確延後備機前置檢查</td>
+</tr>
+<tr>
+<td>正式排程安裝</td>
+<td><strong>完成；安裝器回報 Installed，已完成讀回比對</strong></td>
+</tr>
+<tr>
+<td>正式備份／傳輸／還原演練</td>
+<td><strong>未執行</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>已由使用者透過 sudo 安裝正式程式、root 排程、日誌輪替與受限資料目錄，並備存原排程。沒有以 Docker 繞過 sudo，也沒有在安裝與驗證時修改網路、停止服務或執行關機。</p>
+<h2 id="3">3. 原排程審查</h2>
+<h3 id="31-2200">3.1 每日 22:00 關機</h3>
+<pre><code class="language-cron">00 22 * * * sudo /sbin/shutdown -h now &gt;&gt; /var/log/shutdowm_at.log 2&gt;&amp;1
+</code></pre>
+<p>時間有效，<code>00</code> 與 <code>0</code> 相同。但 root crontab 不需要 sudo；日誌名稱 <code>shutdowm</code> 拼字不一致；沒有保護正在執行的備份或傳輸。平日 20:30 工作若超過 90 分鐘，會與關機衝突。</p>
+<p><strong>修正：</strong>保留 22:00；與備份共用互斥鎖，存在進行中的工作或待復原標記時跳過關機並記錄。跳過後不自動補關機，由值班人處理。</p>
+<h3 id="32-0900">3.2 週六 09:00 備份</h3>
+<pre><code class="language-cron">0 9 * * 6 sudo /home/coffee/scripts/B_generate_backups.sh &gt;&gt; /home/coffee/scripts/B_generate_backups.log 2&gt;&amp;1
+</code></pre>
+<p>這是每週六，不是原腳本註解的「每日」。原腳本依序打包 <code>/etc</code>、<code>/home</code>、<code>/var/lib/docker/volumes</code>，最後只保留兩個日期資料夾。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>缺陷</th>
+<th>影響</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>未逐步檢查 tar 退出碼</td>
+<td>備份失敗仍可能印出完成</td>
+</tr>
+<tr>
+<td>未以新備份成功作為清理前提</td>
+<td>可能刪除仍有價值的舊備份</td>
+</tr>
+<tr>
+<td>註解寫兩天，實際保留兩組</td>
+<td>保留政策容易誤解</td>
+</tr>
+<tr>
+<td>同一天重跑共用檔名</td>
+<td>可能覆寫同日先前備份</td>
+</tr>
+<tr>
+<td><code>/home</code> 含運作中的 PostgreSQL 實體目錄</td>
+<td>沒有一致性保證</td>
+</tr>
+<tr>
+<td>缺乏互斥、校驗與輪替</td>
+<td>工作重疊、損毀與日誌成長較難控制</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>修正：</strong>保留週六 09:00，不增加週六停機。使用最近 72 小時內成功的 Gitea 冷備份，再備份系統檔案；系統 tar 排除 live <code>/home/Gitea</code> 與 coffee 的 <code>.cache</code>。Gitea 資料截止點是該冷備份時間，不宣稱為週六 09:00。</p>
+<p>若沒有合格冷備份，或有其他未納入設計的容器執行中，工作失敗退出，不回退為不一致的熱複製。系統檔案仍是 live 檔案備份，並非整機映像或所有服務的一致性快照；tar 非零退出時不標記成功。</p>
+<h3 id="33-2030">3.3 平日 20:30 同步</h3>
+<p>原排程將 scp 輸出送入 awk，其時間格式為：</p>
+<pre><code class="language-text">strftime(&quot;[%Y-%m-%d %H:%M:%S] &quot;)
+</code></pre>
+<p>cron 會在 shell 解析之前處理未跳脫的 <code>%</code>：第一個 <code>%</code> 截斷命令，後方內容送到標準輸入。雙引號不能阻止這個行為。<a href="https://manpages.debian.org/bookworm/cron/crontab.5.en.html">cron 手冊</a></p>
+<p>本次查到原指定日誌 <code>/home/coffee/coffee_log/gitea_backup_config_data_postgres.log</code> 不存在，與解析錯誤相符；未取得完整歷史 cron 日誌，故不宣稱已確認每次觸發結果。</p>
+<p>另有以下問題：</p>
+<ul>
+<li>沒有 pipefail 的管線通常回傳最後一個命令狀態，awk 成功不代表 scp 成功。</li>
+<li>root 排程使用 root 的 SSH 金鑰與 known_hosts，不能以 coffee 手動能連線代替驗證。</li>
+<li>沒有明確的 BatchMode、連線存活及傳輸逾時控制。</li>
+<li>直接複製運作中的 Git、設定、PostgreSQL 目錄，不能保證同一時間點。</li>
+<li>scp 不是完整刪除同步機制；直接覆寫備機資料目錄也可能影響正在運作的服務。</li>
+</ul>
+<p>普通 PostgreSQL 檔案備份需要停止 DB，或使用具一致性保證的專用機制；不能把普通熱複製當作合格備份。<a href="https://www.postgresql.org/docs/14/backup-file.html">PostgreSQL 14 備份要求</a></p>
+<p><strong>修正：</strong>保留平日 20:30，停止 Gitea → 停止 DB → 確認正常退出 → 冷備份 → 恢復 DB → 恢復 Gitea → healthz → 壓縮驗證／checksum → 傳送備機。服務不必為整段傳輸時間持續停止。</p>
+<p>原本被 <code>#</code> 註解的另一條 scp 命令不會執行，修正版沒有重新啟用它。</p>
+<h2 id="4-root-crontab">4. 修正後 root crontab</h2>
+<p>這是 root 的<strong>使用者 crontab</strong>，時間後不額外加入 <code>root</code> 欄位。主機時區仍為 Asia/Taipei。</p>
+<pre><code class="language-cron">SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# 每日 22:00：工作進行中或待復原時跳過關機
+0 22 * * * /usr/bin/python3 /usr/local/lib/gitea-maintenance/gitea_maintenance.py shutdown &gt;&gt; /var/log/gitea-maintenance/shutdown.log 2&gt;&amp;1
+
+# 週六 09:00：系統檔案＋最近成功的 Gitea 冷備份
+0 9 * * 6 /usr/bin/python3 /usr/local/lib/gitea-maintenance/gitea_maintenance.py weekly &gt;&gt; /var/log/gitea-maintenance/weekly.log 2&gt;&amp;1
+
+# 週一至週五 20:30：冷備份、恢復服務、傳送備機
+30 20 * * 1-5 /usr/bin/python3 /usr/local/lib/gitea-maintenance/gitea_maintenance.py daily &gt;&gt; /var/log/gitea-maintenance/daily.log 2&gt;&amp;1
+</code></pre>
+<p>不再把日期格式或 awk 管線放在 crontab，避免 <code>%</code> 及巢狀引號問題。沒有假設此 cron 版本支援 <code>CRON_TZ</code>，也沒有把未知郵件傳送能力寫成已建置告警。</p>
+<h2 id="5">5. 修正套件與保護措施</h2>
+<p>主機保留的安裝套件位置：<code>/home/coffee/gitea-cron-fix-20260921</code>；正式程式已安裝到 <code>/usr/local/lib/gitea-maintenance</code>。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>檔案</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>root.crontab</code></td>
+<td>新排程</td>
+</tr>
+<tr>
+<td><code>gitea_maintenance.py</code></td>
+<td>備份、復原、傳輸、清理及關機保護</td>
+</tr>
+<tr>
+<td><code>install.sh</code></td>
+<td>前置檢查、備存原排程、安裝及讀回比對</td>
+</tr>
+<tr>
+<td><code>original-active.crontab</code></td>
+<td>使用者提供的原三行，用於防止覆蓋後續變更</td>
+</tr>
+<tr>
+<td><code>logrotate.conf</code></td>
+<td>日誌每日輪替、保留 14 組</td>
+</tr>
+<tr>
+<td><code>test_cron_fix.py</code></td>
+<td>邏輯與安全測試</td>
+</tr>
+<tr>
+<td><code>README.md</code>、<code>SHA256SUMS</code></td>
+<td>操作說明及套件完整性核對</td>
+</tr>
+</tbody>
+</table></div>
+<p>主要保護如下：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>機制</th>
+<th>行為</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>互斥</td>
+<td>daily／weekly／shutdown 共用 flock；第二個工作退出並記錄</td>
+</tr>
+<tr>
+<td>權限</td>
+<td>正式工作須 Linux root；資料目錄須 root 持有、700</td>
+</tr>
+<tr>
+<td>空間</td>
+<td>本機備份前及異機傳輸前檢查空間，不先刪舊備份騰空間</td>
+</tr>
+<tr>
+<td>原服務狀態</td>
+<td>兩個容器原先必須都在執行，否則不擅自啟動後備份</td>
+</tr>
+<tr>
+<td>冷備份一致性</td>
+<td>正常停止 Gitea 與 DB 後才打包；異常退出不發布成功</td>
+</tr>
+<tr>
+<td>復原</td>
+<td>打包失敗仍嘗試恢復；healthz 通過才移除待復原標記</td>
+</tr>
+<tr>
+<td>發布</td>
+<td><code>.partial</code> 完成校驗後才轉為正式備份目錄</td>
+</tr>
+<tr>
+<td>傳輸</td>
+<td>BatchMode、嚴格 host key、keepalive、逾時及遠端 checksum</td>
+</tr>
+<tr>
+<td>清理</td>
+<td>僅處理新工具管理的成功目錄；不碰舊 <code>/var/backups/coffee</code></td>
+</tr>
+<tr>
+<td>關機</td>
+<td>工作占鎖或待復原標記存在即跳過，不強制打斷備份</td>
+</tr>
+</tbody>
+</table></div>
+<p>程式有逾時控制，但斷電、SIGKILL、OS 崩潰與磁碟故障無法保證自動復原；需要依殘留標記人工處理。冷備份打包上限 60 分鐘是防止無限等待的上限，<strong>不是預期停機時間</strong>，實際長度需首次維護量測。</p>
+<h2 id="6">6. 資料位置、保留及備援意義</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>位置</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/var/backups/gitea-maintenance/daily</code></td>
+<td>新 Gitea 冷備份</td>
+</tr>
+<tr>
+<td><code>/var/backups/gitea-maintenance/weekly</code></td>
+<td>系統檔案＋最近一次合格冷備份</td>
+</tr>
+<tr>
+<td><code>/var/lib/gitea-maintenance/recovery-required.json</code></td>
+<td>服務需人工確認復原的標記</td>
+</tr>
+<tr>
+<td><code>/var/log/gitea-maintenance</code></td>
+<td>daily／weekly／shutdown 日誌</td>
+</tr>
+<tr>
+<td><code>/var/backups/gitea-cron-changes/執行編號</code></td>
+<td>原排程、舊腳本、新排程與驗證紀錄</td>
+</tr>
+<tr>
+<td>備機 <code>/home/coffee/gitea-backups</code></td>
+<td>經校驗的封存備份，不是運作中資料目錄</td>
+</tr>
+</tbody>
+</table></div>
+<p>本機保留最近 7 組已完成異機校驗的平日備份、最近 2 組成功週備份。失敗 <code>.partial</code> 與尚未完成異機傳送的本機備份不自動刪除，值班人須追蹤容量。原備份與舊腳本保留不刪。</p>
+<p>備機目錄須由 coffee 持有且權限 700；先傳到 <code>.partial</code>，遠端 SHA-256 通過後才發布。沒有自動刪除備機舊資料，保留政策由備機管理員另行建立。</p>
+<p><strong>不再直接覆寫備機 <code>/home/Gitea</code>，也不代表備機已還原或能即時接手。</strong>若其他流程依賴舊的 live 目錄覆寫，需重新設計切換／還原程序。備份透過 SSH 加密傳輸，但套件未另做檔案靜態加密，應由儲存及機密政策補足。</p>
+<h2 id="7">7. 測試結果</h2>
+<p>在 coffee 主機以一般帳號執行，正式服務命令皆以模擬取代；只有暫存檔與 POSIX 鎖實際運作。<strong>15 項全數通過</strong>：</p>
+<ol>
+<li>排程時段保持、沒有 <code>%</code> 或多餘 sudo。</li>
+<li>待復原標記阻止新備份。</li>
+<li>遠端 checksum 失敗不標記成功。</li>
+<li>healthz 必須為 JSON <code>status=pass</code>。</li>
+<li>不擅自啟動原本停止的容器。</li>
+<li>本機空間不足中止。</li>
+<li>真正的 Linux POSIX 鎖阻止第二個工作。</li>
+<li>備機空間不足保留本機備份。</li>
+<li>恢復失敗保留待復原標記。</li>
+<li>清理範圍限合格、受管理的新備份。</li>
+<li>待復原標記阻止關機。</li>
+<li>成功流程恢復服務後才發布備份。</li>
+<li>tar 失敗仍嘗試恢復，不發布成功。</li>
+<li>DB 非正常退出拒絕備份。</li>
+<li>週備份缺少合格冷備份來源時中止。</li>
+</ol>
+<p>另通過 <code>bash -n</code> 安裝腳本語法檢查，以及上傳後套件 SHA-256 核對。未測試正式停機長度、真實備份傳輸及還原，不將模擬測試等同正式驗收。</p>
+<h2 id="8">8. 安裝失敗的實際診斷</h2>
+<p>使用者執行安裝器，所有檔案 checksum 通過，接著回覆：</p>
+<pre><code class="language-text">ssh: connect to host 192.168.1.3 port 22: No route to host
+</code></pre>
+<p>本次隨後從 <code>.160</code> 再做定點檢查：</p>
+<pre><code class="language-text">ip route get 192.168.1.3
+192.168.1.3 dev eno1 src 192.168.1.2
+
+ip neigh show 192.168.1.3
+192.168.1.3 dev eno1 FAILED
+
+TCP 22 connect
+[Errno 113] No route to host
+</code></pre>
+<p>已確認 <code>eno1</code> UP、同時持有 <code>10.253.114.160/24</code> 與 <code>192.168.1.2/24</code>，<code>enp5s0</code> DOWN。</p>
+<p><strong>判讀：有到該網段的路由，但未能解析到備機鄰居。</strong>問題尚未進到 SSH 金鑰認證階段，不能據此要求重設密碼或重裝 authorized_keys。可能原因包括備機未開機、IP 已變更、實體接線／VLAN 不一致，或網路設備的阻擋；尚無證據指定唯一根因。</p>
+<p>由網管或備機管理員確認：</p>
+<ol>
+<li>備機已開機，且實際 IP／mask 仍是 <code>192.168.1.3/24</code>。</li>
+<li>備機與 <code>.160</code> 的 <code>eno1</code> 所在二層網路可互通；若接在另一張網卡或隔離 VLAN，先核對設計。</li>
+<li>備機 SSH 服務正常；先恢復網路可達，再查認證。</li>
+<li>若備機位址已變更，先提供正確位址以更新並重測套件，不直接用陌生主機替代。</li>
+</ol>
+<p>第一次安裝中止時尚未安裝正式程式或排程；當時確認 <code>/usr/local/lib/gitea-maintenance</code>、<code>/var/backups/gitea-cron-changes</code>、<code>/etc/logrotate.d/gitea-maintenance</code> 都不存在，與前置檢查中止一致。</p>
+<h2 id="9">9. 已完成的本機套用程序</h2>
+<p>使用者已成功執行以下命令，將備機連線與認證列為待驗證。以下保留作為部署紀錄，<strong>目前不需重複安裝</strong>：</p>
+<pre><code class="language-bash">sudo bash /home/coffee/gitea-cron-fix-20260921/install.sh --defer-standby-check
+</code></pre>
+<p>安裝器會比對目前 root 有效排程是否仍與提供的三行相同。若有其他人新增或修改工作，會停止，不覆蓋未知變更。</p>
+<p>此旗標只略過安裝前的備機連線測試，並把 <code>standby_preflight_deferred=1</code> 記錄在安裝紀錄中；正式排程仍使用 root 的 SSH 身分、嚴格 host key、遠端空間及 checksum 檢查。未帶旗標時仍維持原先嚴格前置檢查。備機開機後若認證失敗，再由管理員核對 root 的既有金鑰與已信任指紋，不關閉 host key 檢查，也不提供密碼到聊天。</p>
+<p>成功後會備存原完整 crontab 及舊腳本，安裝 root 持有的程式、日誌輪替及新排程，再讀回比對。安裝不會立即執行備份、停服務或關機。</p>
+<pre><code class="language-bash">sudo crontab -l
+sudo stat -c '%A %U:%G %n' /usr/local/lib/gitea-maintenance/gitea_maintenance.py
+</code></pre>
+<p>保存安裝器顯示的回復快照路徑。若檔案安裝階段發生錯誤，保留完整輸出供檢查，不能反覆略過檢查或直接宣稱成功。</p>
+<h2 id="10">10. 第一次執行驗收與回復</h2>
+<pre><code class="language-bash">sudo tail -n 100 /var/log/gitea-maintenance/daily.log
+sudo tail -n 100 /var/log/gitea-maintenance/weekly.log
+sudo tail -n 100 /var/log/gitea-maintenance/shutdown.log
+sudo journalctl -t gitea-maintenance --since today --no-pager
+docker ps -a
+curl --max-time 10 -fsS http://127.0.0.1:3000/api/healthz
+</code></pre>
+<p>日誌每日輪替、保留 14 組；copytruncate 在輪替瞬間可能有極少量訊息遺失，重要失敗另外寫入系統日誌。尚未建立 email／Slack 等通知，需指定人主動檢查。</p>
+<p>若服務恢復失敗，待復原標記會保留，阻止新備份與排程關機。先確認 DB → Gitea 恢復及 healthz pass，保存事件紀錄後才人工移除標記，不能只刪標記掩蓋故障。</p>
+<p>回復原排程需使用安裝器輸出的實際路徑：</p>
+<pre><code class="language-bash">sudo crontab /var/backups/gitea-cron-changes/20260922T011918Z-245434/root.crontab.before
+sudo crontab -l
+</code></pre>
+<p>回復排程不會中止已執行的工作，也不會自動恢復容器。原排程仍含已知缺陷，僅作緊急回復方案。</p>
+<h2 id="11-pm">11. PM 驗收與後續工作</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>負責人角色</th>
+<th>完成條件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>備機連線</td>
+<td>網管／備機管理員</td>
+<td>鄰居可解析、TCP 22 可達、root SSH 前置檢查通過</td>
+</tr>
+<tr>
+<td>套用排程</td>
+<td>Linux 管理員</td>
+<td>安裝成功、讀回一致、回復快照可用</td>
+</tr>
+<tr>
+<td>首次正式備份</td>
+<td>Linux 管理員</td>
+<td>服務正常恢復、停機時間可量測、校驗成功</td>
+</tr>
+<tr>
+<td>異機副本</td>
+<td>備機管理員</td>
+<td>遠端 checksum 成功、容量與存取受控</td>
+</tr>
+<tr>
+<td>還原演練</td>
+<td>Linux／Gitea 管理員</td>
+<td>隔離環境驗證登入、Git、LFS、Issue／PR 與權限</td>
+</tr>
+<tr>
+<td>時間同步</td>
+<td>網管／Linux 管理員</td>
+<td>有可信 NTP，跨機日誌時間可對照</td>
+</tr>
+<tr>
+<td>告警與保留</td>
+<td>PM／維運</td>
+<td>明確接收人、回應時限、備機保留與加密政策</td>
+</tr>
+</tbody>
+</table></div>
+<p>平日冷備份只在週一至週五觸發，不能承諾任何時點 RPO 都是 24 小時。週末、主機關機、失敗或錯過排程時資料落差可能更長；普通 cron 不會自動補跑關機期間錯過的工作。更嚴格的 RPO 需另行核准頻率及架構。</p>
+<p>本次沒有更改 NTP、網路、防火牆或備機運作中的 Gitea。本機安裝已完成；下一個必要步驟是首次正式備份驗收，並在備機開機後補做 root SSH、正式傳輸及隔離還原驗收。在那之前，不代表異機備援已成功。</p>
+<h3 id="_1">修訂紀錄</h3>
+<ul>
+<li>1.0：完整審查、15 項測試、首次安裝因備機無法連線中止。</li>
+<li>1.1：使用者確認備機關機並指示先假設正常；新增安裝旗標以延後備機前置檢查，不放寬正式備份的驗證。</li>
+</ul>
+<h2 id="12-2026-09-22">12. 部署完成驗證（2026-09-22）</h2>
+<p>使用者提供的安裝輸出顯示 <code>Installed</code>。安裝器會在 <code>crontab</code> 安裝後讀回並以 <code>cmp</code> 比對，成功後才輸出此訊息。本次工具無 sudo 密碼，root crontab 的安裝證據來自這份執行結果；其餘可讀部署檔與服務狀態另以 SSH 核對。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>驗證項目</th>
+<th>結果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>原排程回復快照</td>
+<td><code>/var/backups/gitea-cron-changes/20260922T011918Z-245434/root.crontab.before</code></td>
+</tr>
+<tr>
+<td>正式程式</td>
+<td>root:root，644；父目錄 root:root，755</td>
+</tr>
+<tr>
+<td>logrotate 設定</td>
+<td>root:root，644；每日輪替、14 組</td>
+</tr>
+<tr>
+<td>備份、狀態及日誌目錄</td>
+<td>root:root，700</td>
+</tr>
+<tr>
+<td>程式與 logrotate SHA-256</td>
+<td>與交付版本一致</td>
+</tr>
+<tr>
+<td>cron</td>
+<td>active、enabled</td>
+</tr>
+<tr>
+<td>Gitea／DB 容器</td>
+<td>都在執行；驗證時 Up 6 hours</td>
+</tr>
+<tr>
+<td>healthz</td>
+<td>status=pass，cache 與 database 檢查通過</td>
+</tr>
+<tr>
+<td>備機檢查</td>
+<td>依使用者指示延後，尚未驗證</td>
+</tr>
+<tr>
+<td>正式備份及還原</td>
+<td>尚未觸發／演練</td>
+</tr>
+</tbody>
+</table></div>
+<p>以上證明部署完成且現有服務正常，不能取代首次排程執行、傳輸及還原驗收。安裝時未觸發停機、備份或關機。</p>
+<p>部署檔案 SHA-256：</p>
+<pre><code class="language-text">gitea_maintenance.py  477a639f0b6154df6eee47bebf30c49dc099e33fc2c92daf3a4444dadffcdfc8
+logrotate.conf  ea954f35ab6cb0f8790f24623874d4681debd7f69542eecd65d33c20b509c9fb
+</code></pre>
+<ul>
+<li>1.2：使用者成功完成 sudo 安裝；已核對正式檔案權限、雜湊、cron 與應用健康狀態，保留備機及完整還原待驗收項目。</li>
+</ul></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#1">1. 結論</a><a href="#2">2. 本次實際完成與未完成</a><a href="#3">3. 原排程審查</a><a href="#4-root-crontab">4. 修正後 root crontab</a><a href="#5">5. 修正套件與保護措施</a><a href="#6">6. 資料位置、保留及備援意義</a><a href="#7">7. 測試結果</a><a href="#8">8. 安裝失敗的實際診斷</a><a href="#9">9. 已完成的本機套用程序</a><a href="#10">10. 第一次執行驗收與回復</a><a href="#11-pm">11. PM 驗收與後續工作</a><a href="#12-2026-09-22">12. 部署完成驗證（2026-09-22）</a></aside></div><footer class="footer"><span>依 2026.09.21–22 實機盤點與部署紀錄整理</span><span>文件快照 · 非即時監控</span></footer></main></div></body></html>

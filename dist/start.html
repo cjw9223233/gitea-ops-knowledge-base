@@ -1,0 +1,122 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="票務中心系統組 Gitea 維運知識庫：實機架構、巡檢、排程、備份還原與新人交接。"><title>新手入門 · Gitea 維運知識庫</title><link rel="icon" type="image/svg+xml" href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"%3E%3Crect width="40" height="40" rx="10" fill="%23102c3c"/%3E%3Cpath d="m10 12 8 8-8 8m12 0h9" fill="none" stroke="%237ce4d4" stroke-width="3"/%3E%3C/svg%3E'><link rel="stylesheet" href="styles.css"><script src="site.js" defer></script></head><body><a class="skip" href="#main">跳至主要內容</a><aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a><p class="nav-label">工作指南</p><nav class="nav" aria-label="知識庫導覽"><a href="index.html"><span>00</span>總覽</a><a href="start.html" aria-current="page"><span>01</span>新手入門</a><a href="system.html"><span>02</span>系統與網路</a><a href="daily.html"><span>03</span>巡檢與排查</a><a href="backup.html"><span>04</span>備份與還原</a><a href="schedule.html"><span>05</span>排程管理</a><a href="access.html"><span>06</span>權限與交接</a></nav><div class="side-bottom"><strong>票務中心系統組</strong>coffee · 維運文件<br>文件基準 2026.09.22</div></aside><div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>新手入門</b></div><div class="edition">交接版 <strong>01</strong></div></header><main id="main" class="content"><div class="doc-title"><p class="eyebrow">OPERATIONS HANDBOOK</p><h1>新手入門</h1><p>認識服務入口、基本名詞與操作界線。</p></div><div class="doc-layout" style="margin-top:24px"><article class="article"><h2 id="1">1. 接手先讀：入口、名詞與操作分級</h2>
+<h3 id="11">1.1 三種入口不要混用</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>用途</th>
+<th>入口</th>
+<th>使用的身分</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>開啟 Gitea 網站</td>
+<td><code>http://10.253.114.160:3000/</code></td>
+<td>個人的 Gitea 帳號</td>
+</tr>
+<tr>
+<td>管理 Linux 主機</td>
+<td><code>ssh coffee@10.253.114.160</code>，TCP 22</td>
+<td>Linux 帳號；接手後應改用具名維運帳號</td>
+</tr>
+<tr>
+<td>Git clone／push</td>
+<td><code>ssh://git@10.253.114.160:2222/組織或帳號/專案.git</code></td>
+<td>SSH 使用者為 <code>git</code>，公鑰對應個人的 Gitea 帳號</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>coffee</code> 不是所有人的 Gitea 登入帳號；Git 用的 2222 也不是 Linux 管理用的 22。正式 clone 網址應從該專案頁面的「複製／Clone」取得，不要把表格中的中文字當成實際專案名稱。</p>
+<p>目前網站使用 HTTP，沒有傳輸加密。登入或使用 HTTP Git 認證時，應走已核准且受保護的內網／VPN；優先規劃 HTTPS。沒有觀察到本機 80／443 監聽，但不能據此排除網路外部另有代理。</p>
+<h3 id="12">1.2 新手名詞表</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>名詞</th>
+<th>白話說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linux 主機</td>
+<td>承載整套服務的電腦與作業系統</td>
+</tr>
+<tr>
+<td>Docker 映像 image</td>
+<td>啟動程式所需的版本套件，不等於使用者資料</td>
+</tr>
+<tr>
+<td>容器 container</td>
+<td>正在執行的程式環境；刪除、重建容器與刪除資料是不同事情</td>
+</tr>
+<tr>
+<td>Docker Compose</td>
+<td>用一份 YAML 檔描述多個容器如何一起運作</td>
+</tr>
+<tr>
+<td>bind mount</td>
+<td>把主機上的資料夾提供給容器使用；本機 Gitea 採此方式</td>
+</tr>
+<tr>
+<td>PostgreSQL</td>
+<td>儲存使用者、權限、Issue、PR 等結構化資料的資料庫</td>
+</tr>
+<tr>
+<td>Git 儲存庫</td>
+<td>程式碼、提交歷史、分支與標籤；不能取代 Gitea 資料庫</td>
+</tr>
+<tr>
+<td>LFS</td>
+<td>Git 大型檔案儲存；只複製 Git repository 可能漏掉這些檔案</td>
+</tr>
+<tr>
+<td>白名單</td>
+<td>指定來源 IP 才能連線；與 Gitea 的帳號權限是不同層次</td>
+</tr>
+<tr>
+<td>備份</td>
+<td>保存某個時間點的資料，供誤刪或故障後還原</td>
+</tr>
+<tr>
+<td>鏡像 mirror</td>
+<td>把 Git 內容同步到另一個儲存庫；不代表整個 Gitea 可直接接手</td>
+</tr>
+<tr>
+<td>備援</td>
+<td>主機故障時，另一套可驗證的環境能接替服務</td>
+</tr>
+<tr>
+<td>RPO／RTO</td>
+<td>最多能接受遺失多久的資料／最多能接受服務中斷多久</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="13">1.3 指令在哪裡輸入</h3>
+<p>本手冊的 <code>bash</code> 區塊在 <strong>SSH 登入後的 Linux 終端機</strong>執行；<code>powershell</code> 區塊在自己的 Windows 電腦執行。不要連同提示符號或說明文字一起貼上。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>分級</th>
+<th>意義</th>
+<th>本手冊中的使用原則</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>唯讀檢查</td>
+<td>看狀態、設定或日誌</td>
+<td>已授權維運人員可執行；日誌仍可能含敏感資訊</td>
+</tr>
+<tr>
+<td>維護變更</td>
+<td>重啟、修改設定、升級、產生備份</td>
+<td>由管理員依核准的維護時段執行；本次沒有執行</td>
+</tr>
+<tr>
+<td>災難復原</td>
+<td>還原、切換 IP、替換資料</td>
+<td>先核對主機、資料集與備份時間，兩人覆核後執行</td>
+</tr>
+</tbody>
+</table></div>
+<p>不要自行執行 <code>docker system prune --volumes</code>、遞迴刪除 <code>/home/Gitea</code>、遞迴 <code>chmod 777</code> 或刪除 PostgreSQL 的 WAL。遇到不懂的錯誤，先記錄，不要反覆重啟或清空資料。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#1">1. 接手先讀：入口、名詞與操作分級</a></aside></div><footer class="footer"><span>依 2026.09.21–22 實機盤點與部署紀錄整理</span><span>文件快照 · 非即時監控</span></footer></main></div></body></html>
