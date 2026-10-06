@@ -2,4 +2,35 @@
 /* v2: readable operations layout; retain original navy/teal identity. */
 body{font-size:16px}.article{font-size:16px;line-height:1.85}.article table{font-size:15px}.article th,.article td{padding:13px 15px}.nav a{font-size:15px}.side-bottom,.outline a,.notice{font-size:14px}.sidebar{overflow-y:auto}.head h1{font-size:36px}.head{margin-bottom:24px}.quick{margin:24px 0}.quick .card{border-top:3px solid #2a6075}.quick h2{font-size:21px;margin:8px 0}.doc-layout{margin-top:26px}.article{min-width:0}.article h2{scroll-margin-top:24px}.flow{padding:18px;background:#eef6f6;border-left:3px solid #087f76}.table-wrap{max-width:100%}pre{max-width:100%;overflow-x:auto}code{overflow-wrap:anywhere}pre code{overflow-wrap:normal}:focus-visible{outline:3px solid #b78516;outline-offset:3px}.notice strong{white-space:nowrap}
 @media(max-width:760px){.head h1{font-size:29px}.head-note{display:none}.sidebar.open{max-width:85vw}.article{padding:18px}.quick .card{padding:18px}.head{display:block}.outline{position:static}.footer{display:block}.footer span{display:block} }
-@media print{.sidebar,.topbar,.outline,.quick{display:none}.shell{margin:0}.content{padding:0;max-width:none}.doc-layout{display:block}.article{border:0;padding:0}pre{white-space:pre-wrap;background:white;color:black;border:1px solid #777}.table-wrap{overflow:visible}a{color:black}}
+@media print{.sidebar,.topbar,.outline,.quick,.back-to-top{display:none}.shell{margin:0}.content{padding:0;max-width:none}.doc-layout{display:block}.article{border:0;padding:0}pre{white-space:pre-wrap;background:white;color:black;border:1px solid #777}.table-wrap{overflow:visible}a{color:black}}
+
+/* v3: dark mode, scrollspy, copy buttons, back-to-top, nav search */
+:root[data-theme="dark"]{--ink:#e7eef2;--muted:#9fb3bf;--nav:#0b1f2a;--nav-muted:#8fa8b6;--accent:#4fd9c9;--paper:#0f1a21;--line:#213640;--amber:#e3b065}
+:root[data-theme="dark"] body{background:var(--paper);color:var(--ink)}
+:root[data-theme="dark"] .topbar,:root[data-theme="dark"] .article,:root[data-theme="dark"] .card,:root[data-theme="dark"] .panel,:root[data-theme="dark"] .status-grid{background:#142430;border-color:var(--line)}
+:root[data-theme="dark"] .article :not(pre)>code{background:#1c3038;color:#8fe3d6}
+:root[data-theme="dark"] .article pre{background:#0a1821;color:#dfeef2}
+:root[data-theme="dark"] .notice{background:#102521;border-color:#204a44}
+:root[data-theme="dark"] .notice.warning{background:#2a2211;border-color:#5a4720}
+:root[data-theme="dark"] .article th{background:#1a2d36}
+:root[data-theme="dark"] .skip{background:#142430;color:var(--ink)}
+:root[data-theme="dark"] #menu-button{background:#142430;color:var(--ink);border-color:var(--line)}
+.theme-toggle{border:1px solid var(--line);background:#fff;width:38px;height:38px;border-radius:8px;display:grid;place-items:center;cursor:pointer;color:var(--ink);font-size:16px;flex:0 0 auto}
+:root[data-theme="dark"] .theme-toggle{background:#142430;border-color:var(--line)}
+.theme-toggle:hover{border-color:var(--accent)}
+.nav-search{padding:14px 2px 0}
+.nav-search input{width:100%;background:#0d2733;border:1px solid #2a4a58;color:#dcebf1;border-radius:7px;padding:9px 11px;font-size:14px}
+.nav-search input::placeholder{color:#7d9bad}
+.nav-search input:focus-visible{outline:2px solid #5be0cf;outline-offset:1px}
+.nav-search-empty{color:#8faab9;font-size:13px;margin:10px 4px 0}
+.nav a[hidden]{display:none}
+.outline a.active{color:var(--accent);border-color:var(--accent);font-weight:600}
+.article pre{position:relative}
+.copy-btn{position:absolute;top:8px;right:8px;background:#1e3a47;color:#cfe7ea;border:1px solid #2f4f5c;border-radius:6px;font-size:12px;padding:5px 10px;cursor:pointer;opacity:.75;transition:opacity .15s}
+.article pre:hover .copy-btn,.copy-btn:focus-visible{opacity:1}
+.copy-btn.copied{background:#17665f;color:#fff;border-color:#17665f}
+.back-to-top{position:fixed;right:24px;bottom:24px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--accent);color:#fff;font-size:18px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.18);opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .2s;z-index:30}
+.back-to-top.visible{opacity:1;visibility:visible;transform:translateY(0)}
+.back-to-top:hover{filter:brightness(1.08)}
+@media(max-width:760px){.back-to-top{right:16px;bottom:16px;width:40px;height:40px}.theme-toggle{width:34px;height:34px}}
+@media print{.theme-toggle{display:none}}
