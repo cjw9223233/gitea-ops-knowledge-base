@@ -1,0 +1,18 @@
+<svg viewBox="0 0 780 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="fo-t">
+<title id="fo-t">圖：服務異常時的決策樹——先修主機，修不回來才在備機或新機還原</title>
+<defs><marker id="fo-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5c6c78"/></marker></defs>
+<rect class="badbox" x="14" y="14" width="170" height="52" rx="10"/><text x="99" y="38" text-anchor="middle" font-size="13" font-weight="700">Gitea 無法使用</text><text x="99" y="56" text-anchor="middle" class="small">先排除正常的停機時段</text>
+<rect class="box2" x="230" y="14" width="200" height="52" rx="10"/><text x="330" y="36" text-anchor="middle" font-size="13" font-weight="700">主機還活著嗎？</text><text x="330" y="54" text-anchor="middle" class="small">能 SSH、容器存在、磁碟可讀</text>
+<rect class="okbox" x="476" y="14" width="290" height="52" rx="10"/><text x="621" y="36" text-anchor="middle" font-size="13" font-weight="700">是：依事件手冊 R1 排除</text><text x="621" y="54" text-anchor="middle" class="small">重啟容器前先保存日誌與資料目錄快照</text>
+<rect class="box2" x="230" y="104" width="200" height="52" rx="10"/><text x="330" y="126" text-anchor="middle" font-size="13" font-weight="700">資料還讀得到嗎？</text><text x="330" y="144" text-anchor="middle" class="small">/home/Gitea 與 postgres 可讀取</text>
+<rect class="warnbox" x="476" y="104" width="290" height="52" rx="10"/><text x="621" y="126" text-anchor="middle" font-size="13" font-weight="700">可讀：先複製一份再修（S2／S4）</text><text x="621" y="144" text-anchor="middle" class="small">不要在唯一一份資料上直接試</text>
+<rect class="box2" x="230" y="194" width="200" height="52" rx="10"/><text x="330" y="216" text-anchor="middle" font-size="13" font-weight="700">能在容忍時間內修好？</text><text x="330" y="234" text-anchor="middle" class="small">由 PM 與管理員共同決定</text>
+<rect class="okbox" x="476" y="194" width="290" height="52" rx="10"/><text x="621" y="216" text-anchor="middle" font-size="13" font-weight="700">能：修復主機，驗收後恢復</text><text x="621" y="234" text-anchor="middle" class="small">保留故障紀錄與時間線</text>
+<rect class="warnbox" x="230" y="284" width="536" height="60" rx="10"/><text x="498" y="308" text-anchor="middle" font-size="13" font-weight="700">不能：在備機或新機還原最近一份已校驗備份（S3）</text><text x="498" y="328" text-anchor="middle" class="small">確認唯一寫入端 → 還原 → 驗收 → 切換入口（IP／DNS／ROOT_URL）→ 通知使用者</text>
+<path class="line" d="M184 40 L230 40" marker-end="url(#fo-arr)"/><path class="line" d="M430 40 L476 40" marker-end="url(#fo-arr)"/><text x="453" y="32" text-anchor="middle" class="small">是</text>
+<path class="line" d="M330 66 L330 104" marker-end="url(#fo-arr)"/><text x="344" y="90" class="small">否</text>
+<path class="line" d="M430 130 L476 130" marker-end="url(#fo-arr)"/><text x="453" y="122" text-anchor="middle" class="small">可</text>
+<path class="line" d="M330 156 L330 194" marker-end="url(#fo-arr)"/><text x="344" y="180" class="small">不可讀</text>
+<path class="line" d="M430 220 L476 220" marker-end="url(#fo-arr)"/><text x="453" y="212" text-anchor="middle" class="small">能</text>
+<path class="line" d="M330 246 L330 284" marker-end="url(#fo-arr)"/><text x="344" y="270" class="small">不能</text>
+</svg>
