@@ -3,11 +3,13 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="9/23 故障調查快照。BIOS 偶爾找不到 SSD，根因尚未確認。"><title>硬碟與開機排查 · Gitea 維運知識庫</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23102c3c'/%3E%3Cpath d='m10 12 8 8-8 8m12 0h9' fill='none' stroke='%237ce4d4' stroke-width='3'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
 <link rel="stylesheet" href="styles.css"><script src="site.js" defer></script></head>
 <body><a class="skip" href="#main">跳至主要內容</a>
 <aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a>
+<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋頁面…" aria-label="搜尋導覽頁面" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的頁面</p></div>
 <p class="nav-label">操作與交接</p><nav class="nav" aria-label="知識庫導覽"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a><a href="system.html"><span>03</span>系統與網路</a><a href="daily.html"><span>04</span>日常巡檢</a><a href="logs.html"><span>05</span>Log 與產出物</a><a href="schedule.html"><span>06</span>排程管理</a><a href="backup.html"><span>07</span>備份與還原</a><a href="hardware.html" aria-current="page"><span>08</span>硬碟與開機排查</a><a href="access.html"><span>09</span>權限與交接</a><a href="changes.html"><span>10</span>變更與驗收</a></nav><div class="side-bottom"><strong>票務中心系統組</strong>內部維運文件<br>基準 2026.10.05</div></aside>
-<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>硬碟與開機排查</b></div><div class="edition">交接版 <strong>02</strong></div></header>
+<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>硬碟與開機排查</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">交接版 <strong>02</strong></div></header>
 <main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 維護與交接</p><h1>硬碟與開機排查</h1><p class="intro">9/23 故障調查快照。BIOS 偶爾找不到 SSD，根因尚未確認。</p></div><div class="head-note">最後證據更新<strong>2026 年 10 月 5 日</strong>18:33 · Asia/Taipei</div></header>
 <div class="notice"><strong>文件快照</strong><span>已部署不等於已驗收。新版正式異機傳輸與隔離還原，仍待確認。</span></div>
 
@@ -70,4 +72,5 @@
 </code></pre>
 <p>貼回檢查輸出時可遮蔽序號，保留型號、韌體及錯誤欄位。主機已於 9/23 安裝 smartmontools，不需為每次檢查重新安裝。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#_1">已有證據</a><a href="#_2">處理優先序</a><a href="#105">10/5 關機行為補查</a><a href="#_3">唯讀健康檢查</a></aside></div>
 <footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>狀態依盤點紀錄呈現，非即時監控</span></footer></main></div>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="回到頁首">↑</button>
 </body></html>
