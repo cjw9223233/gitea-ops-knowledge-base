@@ -26,7 +26,14 @@
 </code></pre>
 <pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">df -h / /home
 </code></pre>
-<p>healthz 預期 <code>status: pass</code>。接著查看 <a href="logs.html">daily 工作日誌</a>，確認最近的異機備份，而不只是容器仍在執行。</p>
+<p>healthz 預期 <code>status: pass</code>。再補兩項（唯讀）：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">uptime -s
+</code></pre>
+<p><code>uptime -s</code> 是上次開機時間。目前每晚 22:00 後會重開機，預期落在前一晚約 22:00；若不是，查 <a href="schedule.html">排程與電源</a>。</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">timedatectl show -p NTPSynchronized
+</code></pre>
+<p>目前預期為 <code>no</code>（校時尚未修復）；變成 <code>yes</code> 才代表校時修好，但仍要用 <code>chronyc tracking</code> 確認 Reference ID。</p>
+<p>接著查看 <a href="logs.html">daily 工作日誌</a>，確認最近的異機備份，而不只是容器仍在執行。</p>
 <h2 id="依症狀處理">依症狀處理</h2>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
@@ -54,7 +61,15 @@
 </tr>
 <tr>
 <td>空白 daily.log</td>
-<td>查 .log.1 或 .gz 輪替檔；不直接判定沒執行</td>
+<td>日誌每天 00:00 輪替；查 .log.1 或 .gz；不直接判定沒執行</td>
+</tr>
+<tr>
+<td>22:00 後機器立刻重開</td>
+<td>屬已知問題，見 <a href="schedule.html">排程與電源</a>；不要反覆強制重開</td>
+</tr>
+<tr>
+<td>syslog 很大、訊息被淹沒</td>
+<td>見 <a href="system.html">系統與網路</a> 的 snap 重啟迴圈</td>
 </tr>
 <tr>
 <td>BIOS 看不到 SSD</td>

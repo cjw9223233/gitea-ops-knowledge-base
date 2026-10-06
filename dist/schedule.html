@@ -25,13 +25,14 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 <p>只查看排程：</p>
 <pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo crontab -l
 </code></pre>
+<p>2026-10-05 已讀取確認內容與上方一致；syslog 顯示三項工作都依時間觸發。</p>
 <h2 id="執行身分與流程">執行身分與流程</h2>
 <ol>
 <li>root 檢查空間、服務與互斥鎖。</li>
 <li>停止 Gitea，再停止 PostgreSQL，確認正常退出後製作冷備份。</li>
 <li>恢復 PostgreSQL、Gitea；healthz 通過後移除復原標記。</li>
 <li>root 讀取受保護封存檔，以 stdin 交給 <strong>runuser coffee 的 SSH</strong>。</li>
-<li>coffee 使用既有金鑰登入備機 coffee，先寫入 .partial，再校驗並發布。</li>
+<li>coffee 使用既有金鑰登入備機 coffee，先寫入 <code>.partial</code>，再校驗並發布。</li>
 </ol>
 <p>不建立 root 登入金鑰、不搬移 coffee 私鑰、不放寬本機備份目錄權限。root 排程並沒有搬到 coffee crontab。</p>
 <h2 id="保護與例外">保護與例外</h2>
@@ -48,12 +49,12 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 <td>另一工作退出；22:00 當次關機跳過</td>
 </tr>
 <tr>
-<td>recovery-required.json 存在</td>
+<td><code>recovery-required.json</code> 存在</td>
 <td>新備份與關機被阻止，須先確認服務復原</td>
 </tr>
 <tr>
 <td>備機不可達／傳輸失敗</td>
-<td>保留本機副本，不標記 REMOTE_SUCCESS</td>
+<td>保留本機副本，不標記 <code>REMOTE_SUCCESS</code>（失敗時本機備份不會被清理，見 <a href="backup.html">備份與還原</a>）</td>
 </tr>
 <tr>
 <td>主機在排程時間關機</td>
@@ -65,14 +66,104 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 </tr>
 </tbody>
 </table></div>
+<h2 id="電源與喚醒2200-關機後立刻被叫醒">電源與喚醒：22:00 關機後立刻被叫醒</h2>
+<div class="admonition warning">
+<p class="admonition-title">目前行為與設計不同</p>
+<p>設計是「22:00 關機，隔天約 07:00 由 BIOS 的 RTC 鬧鐘開機」。實際上自 <strong>2026-09-22</strong> 起，13 個夜晚的關機都在<strong>數秒後</strong>又開機，機器整夜在線，隔天 07:00 沒有開機。</p>
+</div>
+<h3 id="已確認資料日期-2026-10-06">已確認（資料日期 2026-10-06）</h3>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>證據</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>關機是真的斷電</td>
+<td><code>journalctl -b -1</code> 結尾為 <code>System Power Off</code>、<code>Shutting down</code>、<code>Journal stopped</code>，時間 22:00:05</td>
+</tr>
+<tr>
+<td>斷電後很快被喚醒</td>
+<td>下一次開機的核心在 22:00:22–26 開始，扣掉開機自檢，電源在斷電後數秒內被重新打開</td>
+</tr>
+<tr>
+<td>9/17–9/19 正常</td>
+<td><code>last -x</code>：22:00 關機、關機持續 9 小時，隔天 07:00 開機</td>
+</tr>
+<tr>
+<td>9/22 起全部異常</td>
+<td><code>last -x</code> 的 <code>shutdown</code> 與下一個 <code>reboot</code> 同為 22:00，間隔 0 分鐘</td>
+</tr>
+<tr>
+<td>RTC 鬧鐘設定還在</td>
+<td><code>/proc/driver/rtc</code> 的 <code>alrm_time</code> 為 07:00:00；RTC 為本地時區</td>
+</tr>
+<tr>
+<td>網路喚醒已開啟</td>
+<td><code>eno1</code> 為 <code>Wake-on: g</code>（收到 magic packet 就開機）且連線中；<code>enp5s0</code> 同為 <code>g</code> 但沒有連線</td>
+</tr>
+<tr>
+<td>其他喚醒來源也開啟</td>
+<td>ACPI 喚醒清單中 <code>GLAN</code>、<code>EHC1</code>、<code>EHC2</code>、<code>XHC</code>、<code>PS2K</code>、<code>PWRB</code> 皆為 enabled</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="已排除">已排除</h3>
+<p>不是 cron 沒觸發（每晚都有紀錄）、不是 RTC 鬧鐘消失、不是新核心（問題比 9/25 升級更早）、不是關機失敗或被韌體重開（日誌是正常的 ACPI 斷電）。</p>
+<h3 id="候選原因與驗證">候選原因與驗證</h3>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>候選</th>
+<th>為什麼可疑</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>H1</td>
+<td>區網內有設備在偵測到主機離線後送出 Wake-on-LAN</td>
+<td><code>Wake-on: g</code> 已開啟且網路線連著；開機總在斷電後數秒內；備機與主機在同一個二層網段</td>
+</tr>
+<tr>
+<td>H2</td>
+<td>9/22 凌晨 02:22–03:29 現場操作時 BIOS 設定被改動</td>
+<td>當晚有多次短開機與一次 0 秒開機，是進 BIOS 的典型樣態；9/22 22:00 就是第一個立即開機的夜晚</td>
+</tr>
+<tr>
+<td>H3</td>
+<td>USB 裝置（鍵盤、滑鼠、KVM、UPS 訊號線）在斷電時產生喚醒事件</td>
+<td>USB 控制器喚醒為 enabled；但 9/17–9/19 同樣設定下沒有發生</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>驗證 A（可逆）：暫時關掉 eno1 的 WoL，重開機後自動還原。</strong></p>
+<pre data-level="chg" data-label="變更 · Linux bash"><code class="language-bash">sudo ethtool -s eno1 wol d
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo ethtool eno1 | grep -i 'wake-on'
+</code></pre>
+<p>接著等下一次自動關機。維持關機到隔天 07:00 才開機，代表是 H1（網路喚醒）；仍在 22:00 立即開機，代表不是 WoL，改查 BIOS 與 USB。<strong>風險：</strong>若 07:00 的 RTC 開機也失敗，Gitea 會一直離線到有人按電源鈕，請確保當天早上有人在場。</p>
+<p><strong>驗證 B：在備機抓 WoL 封包，找出誰送的。</strong>於主機時間 21:59–22:02 之間，在備機執行：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo timeout 240 tcpdump -i any -nn -e -c 20 'ether proto 0x0842 or udp port 9 or udp port 7'
+</code></pre>
+<p>輸出會顯示 magic packet 的來源 MAC 與 IP。</p>
+<p><strong>驗證 C：備機上是否有「主機離線就喚醒」的腳本。</strong></p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo grep -rniE 'wakeonlan|etherwake|ether-wake|wol' /etc/cron* /var/spool/cron /etc/systemd /home/coffee 2&gt;/dev/null | head -n 30
+</code></pre>
+<p><strong>驗證 D（現場）：</strong>進 BIOS 確認 RTC 鬧鐘仍是 07:00、「Restore on AC Power Loss」為 Power Off，並關閉不需要的 Wake on LAN、PCI-E 與 USB 喚醒。</p>
+<h3 id="找到原因之後">找到原因之後</h3>
+<p>關閉喚醒來源後要<strong>持久化</strong>（<code>ethtool</code> 設定重開機會還原）：用 NetworkManager 連線設定、<code>systemd .link</code>（<code>WakeOnLan=off</code>）或開機執行的 systemd unit，並在重開機後再確認 <code>Wake-on: d</code>。目前網路設定在 <code>/etc/netplan/coffee_config.yaml</code>，需 root 才能讀，要先確認使用 networkd 或 NetworkManager 再選方式。驗收標準：連續 7 晚，22:00 後 6 小時內沒有開機紀錄，且隔天 07:00 前後有開機紀錄。</p>
+<p>若 24 小時運轉其實可以接受，也可以改為取消每日關機、改成每週重開，不再依賴 2012 年的 BIOS。這是業務決定。</p>
 <h2 id="105-部署驗證">10/5 部署驗證</h2>
 <ul>
-<li>正式程式：/usr/local/lib/gitea-maintenance/gitea_maintenance.py，root:root，644。</li>
+<li>正式程式：<code>/usr/local/lib/gitea-maintenance/gitea_maintenance.py</code>，root:root，644。</li>
 <li>備份與狀態目錄仍為 root:root，700。</li>
 <li>Linux 23 項回歸測試全部通過；cron active、healthz pass。</li>
-<li>尚未取得新版正式傳輸與還原結果。</li>
+<li>10/5 20:30 的 daily 是修正版第一次正式外送：備機出現完整目錄；日誌確認見 <a href="logs.html">Log 與產出物</a>。</li>
 </ul>
-<p>完整雜湊、回復路徑與稽核證據見 <a href="changes.html">變更與驗收</a>。不要重跑 9/21 舊安裝器；新版已安裝，無需再建立 root SSH 金鑰。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#現行-root-crontab">現行 root crontab</a><a href="#執行身分與流程">執行身分與流程</a><a href="#保護與例外">保護與例外</a><a href="#105-部署驗證">10/5 部署驗證</a></aside></div>
+<p>完整雜湊、回復路徑與稽核證據見 <a href="changes.html">變更與驗收</a>。不要重跑 9/21 舊安裝器；新版已安裝，無需再建立 root SSH 金鑰。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#現行-root-crontab">現行 root crontab</a><a href="#執行身分與流程">執行身分與流程</a><a href="#保護與例外">保護與例外</a><a href="#電源與喚醒2200-關機後立刻被叫醒">電源與喚醒：22:00 關機後立刻被叫醒</a><a href="#105-部署驗證">10/5 部署驗證</a></aside></div>
 <footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>各頁資料日期見頁首；非即時監控</span></footer></main></div>
 <button class="back-to-top" id="back-to-top" type="button" aria-label="回到頁首">↑</button>
 </body></html>

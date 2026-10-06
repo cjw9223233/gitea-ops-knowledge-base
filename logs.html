@@ -56,7 +56,7 @@
 </code></pre>
 <pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo ls -lh /var/log/gitea-maintenance/
 </code></pre>
-<p>若當前檔案是空的，查看最近輪替檔；檔名依清單為準。</p>
+<p>若當前檔案是空的，查看最近輪替檔；檔名依清單為準。日誌在每天 00:00 輪替（<code>copytruncate</code>、<code>notifempty</code>），<strong>午夜之後再讀 <code>daily.log</code> 幾乎都是空的</strong>，前一天的內容在 <code>daily.log.1</code>。</p>
 <pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo tail -n 100 /var/log/gitea-maintenance/daily.log.1
 </code></pre>
 <pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo zcat /var/log/gitea-maintenance/daily.log.2.gz
@@ -75,6 +75,7 @@
 <pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">ssh -o BatchMode=yes -o StrictHostKeyChecking=yes coffee@192.168.1.3 'ls -lh /home/coffee/gitea-backups/'
 </code></pre>
 <p>如果目錄不存在，可能尚未進入首次正式傳輸，請對照 daily.log；不等於 SSH 認證失敗。</p>
+<p>2026-10-05 的實例：備機 <code>gitea-backups/</code> 出現 <code>20261005T123003Z-939940</code>，名稱沒有 <code>.partial</code> 後綴，表示備機端校驗通過後才發布。名稱的時間是<strong>主機時鐘</strong>的 UTC，加 8 小時為 20:30。</p>
 <h2 id="檔案與成功標記">檔案與成功標記</h2>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>

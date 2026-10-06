@@ -66,12 +66,12 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="105-關機行為補查">10/5 關機行為補查</h2>
-<p>近日日誌顯示 22:00 到達 poweroff 流程後，約十幾秒即出現新的 boot。尚未證明與 SSD 故障為同一原因；需有人值守核對 BIOS RTC、WOL、電源恢復與外部喚醒。不要為測試而遠端反覆強制重開。</p>
+<h2 id="2200-關機後立刻再開機">22:00 關機後立刻再開機</h2>
+<p>2026-10-06 已確認：關機是真的斷電（journal 記錄 <code>System Power Off</code>），數秒內又被喚醒，自 9/22 起 13 夜皆然。<code>eno1</code> 的 Wake-on-LAN 已開啟，是最可疑的來源之一，但尚未證明；候選原因與驗證步驟見 <a href="schedule.html">排程與電源</a>。目前沒有證據顯示它與 SSD 找不到的問題同源；兩者都需要有人在現場時再測，不要為了測試而遠端反覆強制重開。</p>
 <h2 id="唯讀健康檢查">唯讀健康檢查</h2>
 <pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo smartctl -x /dev/sda
 </code></pre>
-<p>貼回檢查輸出時可遮蔽序號，保留型號、韌體及錯誤欄位。主機已於 9/23 安裝 smartmontools，不需為每次檢查重新安裝。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#已有證據">已有證據</a><a href="#處理優先序">處理優先序</a><a href="#105-關機行為補查">10/5 關機行為補查</a><a href="#唯讀健康檢查">唯讀健康檢查</a></aside></div>
+<p>貼回檢查輸出時可遮蔽序號，保留型號、韌體及錯誤欄位。主機已於 9/23 安裝 smartmontools，不需為每次檢查重新安裝。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#已有證據">已有證據</a><a href="#處理優先序">處理優先序</a><a href="#2200-關機後立刻再開機">22:00 關機後立刻再開機</a><a href="#唯讀健康檢查">唯讀健康檢查</a></aside></div>
 <footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>各頁資料日期見頁首；非即時監控</span></footer></main></div>
 <button class="back-to-top" id="back-to-top" type="button" aria-label="回到頁首">↑</button>
 </body></html>

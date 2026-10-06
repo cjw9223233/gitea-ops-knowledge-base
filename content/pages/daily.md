@@ -22,7 +22,21 @@ curl --max-time 10 -fsS http://127.0.0.1:3000/api/healthz
 df -h / /home
 ```
 
-healthz 預期 `status: pass`。接著查看 [daily 工作日誌](logs.html)，確認最近的異機備份，而不只是容器仍在執行。
+healthz 預期 `status: pass`。再補兩項（唯讀）：
+
+```bash-ro
+uptime -s
+```
+
+`uptime -s` 是上次開機時間。目前每晚 22:00 後會重開機，預期落在前一晚約 22:00；若不是，查 [排程與電源](schedule.html)。
+
+```bash-ro
+timedatectl show -p NTPSynchronized
+```
+
+目前預期為 `no`（校時尚未修復）；變成 `yes` 才代表校時修好，但仍要用 `chronyc tracking` 確認 Reference ID。
+
+接著查看 [daily 工作日誌](logs.html)，確認最近的異機備份，而不只是容器仍在執行。
 
 ## 依症狀處理
 
@@ -32,7 +46,9 @@ healthz 預期 `status: pass`。接著查看 [daily 工作日誌](logs.html)，�
 | No route to host／timeout | 先查備機電源、路由、鄰居與 TCP 22 |
 | Another backup/shutdown job is active | 查目前工作，不移除鎖檔來強行執行 |
 | RECOVERY REQUIRED | 確認 DB、Gitea 與 healthz，保留紀錄後依復原程序處理 |
-| 空白 daily.log | 查 .log.1 或 .gz 輪替檔；不直接判定沒執行 |
+| 空白 daily.log | 日誌每天 00:00 輪替；查 .log.1 或 .gz；不直接判定沒執行 |
+| 22:00 後機器立刻重開 | 屬已知問題，見 [排程與電源](schedule.html)；不要反覆強制重開 |
+| syslog 很大、訊息被淹沒 | 見 [系統與網路](system.html) 的 snap 重啟迴圈 |
 | BIOS 看不到 SSD | 依 [硬碟與開機排查](hardware.html) 保全備份、安排硬體檢查 |
 
 ## 需要交接的資訊
