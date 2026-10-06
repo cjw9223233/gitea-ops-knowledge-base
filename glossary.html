@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="用白話解釋常見術語，並對照它們在這個系統裡的樣子。"><title>名詞與圖解 · Gitea 維運知識庫</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23102c3c'/%3E%3Cpath d='m10 12 8 8-8 8m12 0h9' fill='none' stroke='%237ce4d4' stroke-width='3'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="stylesheet" href="styles.css"><script src="search-index.js" defer></script><script src="site.js" defer></script></head>
+<body><a class="skip" href="#main">跳至主要內容</a>
+<aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a>
+<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋全站內容…" aria-label="搜尋全站內容" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的內容</p><div class="search-results" id="search-results" hidden></div></div>
+<div class="nav-groups"><div class="nav-group"><p class="nav-label">入門</p><nav class="nav" aria-label="入門"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a><a href="glossary.html" aria-current="page"><span>03</span>名詞與圖解</a></nav></div><div class="nav-group"><p class="nav-label">架構</p><nav class="nav" aria-label="架構"><a href="system.html"><span>04</span>系統與網路</a></nav></div><div class="nav-group"><p class="nav-label">資料保護</p><nav class="nav" aria-label="資料保護"><a href="backup.html"><span>05</span>備份與還原</a></nav></div><div class="nav-group"><p class="nav-label">營運</p><nav class="nav" aria-label="營運"><a href="daily.html"><span>06</span>日常巡檢</a><a href="logs.html"><span>07</span>Log 與產出物</a><a href="schedule.html"><span>08</span>排程管理</a><a href="hardware.html"><span>09</span>硬碟與開機排查</a><a href="runbook.html"><span>10</span>事件處理手冊</a></nav></div><div class="nav-group"><p class="nav-label">治理</p><nav class="nav" aria-label="治理"><a href="access.html"><span>11</span>權限與交接</a><a href="changes.html"><span>12</span>變更與驗收</a></nav></div></div><div class="side-bottom"><strong>內部維運文件</strong>每頁標示資料日期與狀態<br>非即時監控</div></aside>
+<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 / 入門 /</span><b>名詞與圖解</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">手冊 <strong>v3</strong></div></header>
+<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 入門</p><h1>名詞與圖解</h1><p class="intro">用白話解釋常見術語，並對照它們在這個系統裡的樣子。</p></div><div class="head-note">資料日期<strong>2026-10-06</strong><span class="chip ok">已驗證</span></div></header>
+<dl class="meta"><div><dt>這頁解決什麼</dt><dd>看不懂術語時查一下，知道它在這個系統裡指什麼。</dd></div><div><dt>前置知識</dt><dd>不需要</dd></div><div><dt>風險等級</dt><dd><span class="risk r-ro">唯讀</span></dd></div><div><dt>適合讀者</dt><dd><span class="aud">新手</span><span class="aud">PM</span><span class="aud">開發者</span></dd></div></dl>
+<div class="notice"><strong>文件快照</strong><span>內容為資料日期當天的盤點，非即時監控。「已部署」不等於「已驗收」，未演練的步驟會標示「待演練」。</span></div>
+
+<div class="doc-layout"><article class="article"><p>這頁把網站裡會看到的術語，用白話解釋，並說明在這個系統裡長什麼樣子。標示「新手必讀」的詞，Day 1 先讀。</p>
+<h2 id="備份與還原">備份與還原</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>名詞</th>
+<th>白話</th>
+<th>在這個系統裡</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>冷備份（新手必讀）</td>
+<td>先把服務停下來再備份，資料不會在複製到一半時被改動</td>
+<td>每個平日 20:30 先停 Gitea 與資料庫約 3 分鐘，再打包；備份檔是 <code>gitea-cold.tar.gz</code></td>
+</tr>
+<tr>
+<td>熱備份</td>
+<td>服務運行中直接複製，可能得到不一致的資料</td>
+<td>舊流程用 <code>scp</code> 直接複製資料庫目錄，已停用</td>
+</tr>
+<tr>
+<td>RPO（新手必讀）</td>
+<td>最多能接受遺失多久的資料</td>
+<td>平日一天一份，所以最壞可能損失將近一天；週末沒有新的 daily，可能更久</td>
+</tr>
+<tr>
+<td>RTO（新手必讀）</td>
+<td>出事後最多能接受多久恢復服務</td>
+<td><strong>尚未實測</strong>，要靠還原演練才知道</td>
+</tr>
+<tr>
+<td>異機備份</td>
+<td>把備份放到另一台機器，避免同一台壞掉就全沒</td>
+<td>備機 <code>192.168.1.3</code> 的 <code>/home/coffee/gitea-backups/</code></td>
+</tr>
+<tr>
+<td>checksum／SHA-256</td>
+<td>檔案的指紋，內容改變指紋就不同</td>
+<td><code>SHA256SUMS</code> 檔；備機收完會核對才發布</td>
+</tr>
+<tr>
+<td><code>.partial</code></td>
+<td>還沒完成的資料夾</td>
+<td>傳輸或製作中、或中途失敗；先查日誌，不要直接刪</td>
+</tr>
+<tr>
+<td><code>SUCCESS</code>／<code>REMOTE_SUCCESS</code></td>
+<td>兩個成功標記檔</td>
+<td>前者＝本機備份完成；後者＝已通過備機校驗。兩者都<strong>不等於</strong>還原成功</td>
+</tr>
+<tr>
+<td>還原演練</td>
+<td>真的拿備份在隔離環境把系統重建一次</td>
+<td>尚未進行；見 還原與演練</td>
+</tr>
+<tr>
+<td>3-2-1 原則</td>
+<td>3 份資料、2 種媒介、1 份在異地</td>
+<td>目前未達成：同一顆 SSD、未異地、weekly 未外送</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="網路與時間">網路與時間</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>名詞</th>
+<th>白話</th>
+<th>在這個系統裡</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>埠（port）（新手必讀）</td>
+<td>一台機器上不同服務的「門牌號碼」</td>
+<td>3000＝網站、2222＝Git SSH、22＝維運 SSH</td>
+</tr>
+<tr>
+<td>白名單</td>
+<td>只讓名單上的來源連進來</td>
+<td>由防火牆規則實作，新增使用者要先申請來源 IP</td>
+</tr>
+<tr>
+<td>NAT</td>
+<td>讓內部機器共用一個出口位址上網</td>
+<td>主機可能替 <code>192.168.1.0/24</code> 做 NAT（腳本在，生效待確認）</td>
+</tr>
+<tr>
+<td>NTP／校時（新手必讀）</td>
+<td>讓電腦時鐘跟標準時間對齊</td>
+<td>目前全部來源連不上，時鐘比標準時間快約 50 分鐘</td>
+</tr>
+<tr>
+<td><code>Leap status: Normal</code></td>
+<td>chrony 自我檢查的一個欄位</td>
+<td><strong>不代表已校時</strong>；目前是自己跟自己比。要看 <code>Reference ID</code>、<code>Stratum</code> 與 <code>^*</code> 來源</td>
+</tr>
+<tr>
+<td>WoL（Wake-on-LAN）</td>
+<td>網路上送一個特殊封包就能叫醒關機的電腦</td>
+<td><code>eno1</code> 已開啟，是 22:00 後被喚醒的可疑來源之一</td>
+</tr>
+<tr>
+<td>RTC／BIOS 鬧鐘</td>
+<td>主機板上的小時鐘，可在設定時間叫醒電腦</td>
+<td>設計上 07:00 叫醒；目前被其他喚醒搶先</td>
+</tr>
+<tr>
+<td>同網卡雙 IP</td>
+<td>一張網卡設兩個位址</td>
+<td><code>10.253.114.160</code> 與 <code>192.168.1.2</code> 都在 <code>eno1</code>，不是兩條獨立線路</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="系統與權限">系統與權限</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>名詞</th>
+<th>白話</th>
+<th>在這個系統裡</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>root</td>
+<td>Linux 的最高權限帳號</td>
+<td>執行維護排程；SSH 目前仍允許 root 登入（待收斂）</td>
+</tr>
+<tr>
+<td>sudo</td>
+<td>暫時借用 root 權限執行單一指令</td>
+<td><code>coffee</code> 屬於 <code>sudo</code> 群組</td>
+</tr>
+<tr>
+<td>docker 群組（新手必讀）</td>
+<td>能操作 Docker 的使用者群組</td>
+<td><strong>等同 root 等級</strong>，不能給一般開發者</td>
+</tr>
+<tr>
+<td>UID／GID</td>
+<td>系統用數字記錄「誰」</td>
+<td>Gitea 容器 1000:1000；PostgreSQL 999；主機上顯示的名字可能不同，不代表資料屬於那個服務</td>
+</tr>
+<tr>
+<td>遞迴 chmod／chown</td>
+<td>一次改整棵目錄的權限／擁有者</td>
+<td>在 <code>/home/Gitea</code> 上<strong>禁止</strong>，會破壞資料庫</td>
+</tr>
+<tr>
+<td>SSH 金鑰</td>
+<td>用一對檔案代替密碼登入；公鑰放伺服器、私鑰自己保管</td>
+<td>私鑰永遠不貼進文件或聊天；見 <a href="access.html">權限與帳號</a> 的金鑰清冊</td>
+</tr>
+<tr>
+<td>共用帳號</td>
+<td>多人使用同一個登入帳號</td>
+<td>主機只有 <code>coffee</code>，無法分辨是誰操作</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="docker-與-gitea">Docker 與 Gitea</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>名詞</th>
+<th>白話</th>
+<th>在這個系統裡</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>容器</td>
+<td>把程式和它需要的環境包在一起執行</td>
+<td><code>gitea-server-1</code> 與 <code>gitea-db-1</code></td>
+</tr>
+<tr>
+<td>Compose</td>
+<td>用一個設定檔描述多個容器</td>
+<td><code>/home/Gitea/docker-compose.yml</code>，專案名 <code>gitea</code></td>
+</tr>
+<tr>
+<td><code>restart: always</code></td>
+<td>容器掛掉或主機重開後自動重啟</td>
+<td>兩個 Gitea 容器都設定了</td>
+</tr>
+<tr>
+<td>healthz（新手必讀）</td>
+<td>Gitea 提供的健康檢查網址</td>
+<td><code>http://127.0.0.1:3000/api/healthz</code>，預期 <code>status: pass</code></td>
+</tr>
+<tr>
+<td><code>Up</code> 不等於健康</td>
+<td>容器行程活著，不代表網站與資料庫可用</td>
+<td>要另外測 healthz 與 clone</td>
+</tr>
+<tr>
+<td><code>DOCKER-USER</code></td>
+<td>Docker 留給管理員放防火牆規則的位置</td>
+<td>白名單腳本寫在這裡</td>
+</tr>
+<tr>
+<td>rootless 映像</td>
+<td>容器內的 Gitea 用非 root 使用者跑</td>
+<td>不代表整個 Docker daemon 是 rootless</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="排程與日誌">排程與日誌</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>名詞</th>
+<th>白話</th>
+<th>在這個系統裡</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cron（新手必讀）</td>
+<td>Linux 的排程器，依時間自動執行指令</td>
+<td>root crontab 有三項工作</td>
+</tr>
+<tr>
+<td>anacron</td>
+<td>補跑錯過的例行工作</td>
+<td>只管系統預設工作；<strong>不會</strong>補跑備份</td>
+</tr>
+<tr>
+<td>logrotate</td>
+<td>定期把日誌換檔、壓縮、清舊</td>
+<td>每天 00:00 輪替，所以午夜後的 <code>daily.log</code> 是空的，看 <code>.log.1</code></td>
+</tr>
+<tr>
+<td>維護鎖</td>
+<td>防止兩個維護工作同時跑</td>
+<td><code>/run/lock/gitea-maintenance.lock</code></td>
+</tr>
+<tr>
+<td>復原標記</td>
+<td>備份中途失敗時留下的警示檔</td>
+<td>存在時新備份與關機會被擋；先確認服務再處理</td>
+</tr>
+<tr>
+<td>journal／syslog</td>
+<td>Linux 的系統日誌</td>
+<td><code>journalctl</code> 可查前幾次開機；syslog 目前被 snap 重啟迴圈洗版</td>
+</tr>
+<tr>
+<td>UTC</td>
+<td>世界標準時間，台灣時間減 8 小時</td>
+<td>備份資料夾名稱用 UTC，<code>…T123003Z</code> ＝台灣 20:30</td>
+</tr>
+</tbody>
+</table></div></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#備份與還原">備份與還原</a><a href="#網路與時間">網路與時間</a><a href="#系統與權限">系統與權限</a><a href="#docker-與-gitea">Docker 與 Gitea</a><a href="#排程與日誌">排程與日誌</a></aside></div>
+<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>各頁資料日期見頁首；非即時監控</span></footer></main></div>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="回到頁首">↑</button>
+</body></html>

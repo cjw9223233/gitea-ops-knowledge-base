@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="依症狀查：先看什麼、怎麼判讀、何時找誰。"><title>事件處理手冊 · Gitea 維運知識庫</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23102c3c'/%3E%3Cpath d='m10 12 8 8-8 8m12 0h9' fill='none' stroke='%237ce4d4' stroke-width='3'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="stylesheet" href="styles.css"><script src="search-index.js" defer></script><script src="site.js" defer></script></head>
+<body><a class="skip" href="#main">跳至主要內容</a>
+<aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a>
+<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋全站內容…" aria-label="搜尋全站內容" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的內容</p><div class="search-results" id="search-results" hidden></div></div>
+<div class="nav-groups"><div class="nav-group"><p class="nav-label">入門</p><nav class="nav" aria-label="入門"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a><a href="glossary.html"><span>03</span>名詞與圖解</a></nav></div><div class="nav-group"><p class="nav-label">架構</p><nav class="nav" aria-label="架構"><a href="system.html"><span>04</span>系統與網路</a></nav></div><div class="nav-group"><p class="nav-label">資料保護</p><nav class="nav" aria-label="資料保護"><a href="backup.html"><span>05</span>備份與還原</a></nav></div><div class="nav-group"><p class="nav-label">營運</p><nav class="nav" aria-label="營運"><a href="daily.html"><span>06</span>日常巡檢</a><a href="logs.html"><span>07</span>Log 與產出物</a><a href="schedule.html"><span>08</span>排程管理</a><a href="hardware.html"><span>09</span>硬碟與開機排查</a><a href="runbook.html" aria-current="page"><span>10</span>事件處理手冊</a></nav></div><div class="nav-group"><p class="nav-label">治理</p><nav class="nav" aria-label="治理"><a href="access.html"><span>11</span>權限與交接</a><a href="changes.html"><span>12</span>變更與驗收</a></nav></div></div><div class="side-bottom"><strong>內部維運文件</strong>每頁標示資料日期與狀態<br>非即時監控</div></aside>
+<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 / 營運 /</span><b>事件處理手冊</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">手冊 <strong>v3</strong></div></header>
+<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 營運</p><h1>事件處理手冊</h1><p class="intro">依症狀查：先看什麼、怎麼判讀、何時找誰。</p></div><div class="head-note">資料日期<strong>2026-10-06</strong><span class="chip snap">快照</span></div></header>
+<dl class="meta"><div><dt>這頁解決什麼</dt><dd>出現症狀時，知道先做哪幾個唯讀檢查、如何判讀、何時升級。</dd></div><div><dt>前置知識</dt><dd>能登入主機或使用者電腦</dd></div><div><dt>風險等級</dt><dd><span class="risk r-ro">唯讀</span></dd></div><div><dt>適合讀者</dt><dd><span class="aud">維運</span><span class="aud">新手</span><span class="aud">網管</span></dd></div></dl>
+<div class="notice"><strong>文件快照</strong><span>內容為資料日期當天的盤點，非即時監控。「已部署」不等於「已驗收」，未演練的步驟會標示「待演練」。</span></div>
+
+<div class="doc-layout"><article class="article"><p>每個症狀固定四步：<strong>症狀</strong>（你看到什麼）→ <strong>先看</strong>（唯讀檢查）→ <strong>判讀</strong>（輸出代表什麼）→ <strong>升級</strong>（找誰、何時）。除非特別標示，指令都是唯讀。</p>
+<div class="admonition warning">
+<p class="admonition-title">共通原則</p>
+<p>先蒐集證據再動手；不要刪鎖檔、<code>.partial</code>、<code>recovery-required.json</code>；不要在上班時段重開機或手動跑備份。需要變更時，回到 <a href="access.html">權限與交接</a> 的變更流程，先備份、再改、再驗收。</p>
+</div>
+<h2 id="r1-gitea-網站打不開">R1 Gitea 網站打不開</h2>
+<p><strong>症狀</strong>：瀏覽器連不到、很慢，或回應 502／逾時。</p>
+<p><strong>先看</strong>（在正式主機執行）：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">curl --max-time 10 -fsS http://127.0.0.1:3000/api/healthz
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">docker ps -a --format '{{.Names}} {{.Status}}'
+</code></pre>
+<p><strong>判讀</strong>：</p>
+<ul>
+<li>發生在主機時間 <strong>20:30–20:35</strong> 或 <strong>22:00–22:02</strong>：屬於正常的備份停機與每晚重開機，幾分鐘後恢復。</li>
+<li><code>healthz</code> 通過但使用者連不上：多半是網路或白名單，改看 <a href="#r2-git-pushclone-失敗">R2</a>。</li>
+<li><code>healthz</code> 失敗且容器是 <code>Exited</code>：看 <code>docker logs --since 30m --tail 100 gitea-server-1</code>，並確認是否有 <code>recovery-required.json</code>（備份中途失敗會留下）。</li>
+</ul>
+<p><strong>升級</strong>：容器停止且無法自行啟動、或有復原標記，立即找 Linux 管理員；不要自行 <code>docker compose down</code>。</p>
+<h2 id="r2-git-pushclone-失敗">R2 Git push／clone 失敗</h2>
+<p><strong>症狀</strong>：<code>git clone</code>、<code>push</code> 逾時、被拒絕，或要求登入。</p>
+<p><strong>先看</strong>（在使用者電腦，Windows PowerShell）：</p>
+<pre data-level="ro" data-label="唯讀 · Windows PowerShell"><code class="language-powershell">Test-NetConnection 10.253.114.160 -Port 3000
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Windows PowerShell"><code class="language-powershell">Test-NetConnection 10.253.114.160 -Port 2222
+</code></pre>
+<p><strong>判讀</strong>：</p>
+<ul>
+<li><code>TcpTestSucceeded: False</code>：來源 IP 不在白名單、或中間網路擋住，找網管，並提供<strong>使用者實際來源 IP</strong>（經 NAT 時以抵達主機的位址為準）。</li>
+<li>埠通但被拒絕：帳號、權限或個人金鑰問題，找 Gitea 管理員；確認公鑰已加入個人帳號，且使用 <code>2222</code> 而不是主機的 <code>22</code>。</li>
+</ul>
+<p><strong>升級</strong>：多人同時失敗，先看 <a href="#r1-gitea-網站打不開">R1</a>。</p>
+<h2 id="r3-git-ssh2222不通但網站可開">R3 Git SSH（2222）不通但網站可開</h2>
+<p><strong>症狀</strong>：網頁正常，<code>git clone ssh://…:2222</code> 失敗。</p>
+<p><strong>先看</strong>（在正式主機）：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">ss -lnt | grep -E ':(22|2222)\b'
+</code></pre>
+<p><strong>判讀</strong>：2222 未監聽代表 Gitea 容器的 SSH 沒啟動，看 <code>docker logs gitea-server-1</code>；已監聽則是白名單或使用者金鑰問題，流程同 R2。注意 <strong>22</strong> 是 Linux 維運 SSH，<strong>2222</strong> 才是 Git。</p>
+<p><strong>升級</strong>：Linux 管理員（容器）或網管（白名單）。</p>
+<h2 id="r4-備份失敗ssh-exit255">R4 備份失敗：<code>ssh exit=255</code></h2>
+<p><strong>症狀</strong>：<code>daily.log</code> 出現 <code>FAILED: Command failed: /usr/bin/ssh exit=255</code>。</p>
+<p><strong>先看</strong>：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo tail -n 40 /var/log/gitea-maintenance/daily.log.1
+</code></pre>
+<p>要模擬排程的環境（清空環境變數，沒有 ssh-agent）：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo runuser -u coffee -- /usr/bin/env -i HOME=/home/coffee USER=coffee LOGNAME=coffee PATH=/usr/bin:/bin /usr/bin/ssh -v -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 coffee@192.168.1.3 'hostname; date'
+</code></pre>
+<p><strong>判讀</strong>：<code>255</code> 是 SSH 連線或認證層失敗。逐一確認備機是否開機、路由與 TCP 22、<code>known_hosts</code>、備機 <code>authorized_keys</code>。你在互動終端機手動 <code>ssh</code> 成功<strong>不代表排程會成功</strong>，因為排程沒有 ssh-agent。</p>
+<p><strong>升級</strong>：Linux 管理員；備機本身電源或網路找備機管理員。外送失敗期間，本機備份不會被清理，需追蹤容量（見 <a href="#r6-磁碟快滿">R6</a>）。</p>
+<h2 id="r5-dailylog-是空的">R5 <code>daily.log</code> 是空的</h2>
+<p><strong>症狀</strong>：<code>sudo tail daily.log</code> 沒有任何輸出。</p>
+<p><strong>先看</strong>：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo ls -lh /var/log/gitea-maintenance/
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo tail -n 100 /var/log/gitea-maintenance/daily.log.1
+</code></pre>
+<p><strong>判讀</strong>：日誌每天 00:00 輪替；午夜後當前檔案就是空的，前一天內容在 <code>.log.1</code>，更早的是 <code>.log.2.gz</code> 之後（用 <code>zcat</code> 讀）。<strong>空白不代表沒執行</strong>。</p>
+<p><strong>升級</strong>：連 <code>.log.1</code> 與 <code>.gz</code> 都沒有紀錄，才查 <code>sudo crontab -l</code> 與 <code>systemctl is-active cron</code>。</p>
+<h2 id="r6-磁碟快滿">R6 磁碟快滿</h2>
+<p><strong>症狀</strong>：<code>df</code> 使用率升高、備份失敗、容器寫入錯誤。</p>
+<p><strong>先看</strong>：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">df -h / /home
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo du -sh /var/backups/gitea-maintenance/daily /var/backups/gitea-maintenance/weekly
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">ls -lh /var/log/syslog /var/log/syslog.1
+</code></pre>
+<p><strong>判讀</strong>：常見三個來源——①外送連續失敗使本機 <code>daily/</code> 累積（沒有 <code>REMOTE_SUCCESS</code> 的不會被自動清理）；②weekly 每份都含完整冷備份與系統檔；③<code>syslog</code> 因 <code>snapd-desktop-integration</code> 約每 2 秒重啟一次，每天約 170 MB。</p>
+<p><strong>升級</strong>：Linux 管理員。<strong>不要為了騰空間刪掉唯一一份備份</strong>；先確認備機已有校驗過的副本。</p>
+<h2 id="r7-系統時間不對">R7 系統時間不對</h2>
+<p><strong>症狀</strong>：日誌時間與實際差約 50 分鐘、雙因素驗證碼無效、憑證警告。</p>
+<p><strong>先看</strong>：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">date -u
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">timedatectl show -p NTPSynchronized -p TimeUSec
+</code></pre>
+<p><strong>判讀</strong>：對照可信任的標準時間。目前主機比標準時間快約 50 分鐘，且為<strong>固定偏移</strong>；chrony 六個來源全部連不上，<code>Leap status: Normal</code> 只代表自己跟自己對時。</p>
+<p><strong>升級</strong>：網管（先查內網 NTP 與 UDP 123，見 <a href="system.html">系統與網路</a>）。<strong>不要在服務運行時直接 <code>date -s</code> 手動跳時</strong>，會影響日誌、憑證與雙因素驗證。</p>
+<h2 id="r8-2200-之後機器立刻重開隔天-0700-沒有開機">R8 22:00 之後機器立刻重開／隔天 07:00 沒有開機</h2>
+<p><strong>症狀</strong>：以為機器已關機，實際整夜在線；或相反，機器真的沒開起來。</p>
+<p><strong>先看</strong>：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">uptime -s
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">last -x -n 10 reboot shutdown
+</code></pre>
+<p><strong>判讀</strong>：目前已知 22:00 關機後數秒就被喚醒（自 9/22 起），所以 <code>uptime -s</code> 約為前一晚 22:00 屬於<strong>目前的已知行為</strong>，原因與驗證步驟見 <a href="schedule.html">排程與電源</a>。若機器完全沒起來，才是 RTC 鬧鐘或電源問題。</p>
+<p><strong>升級</strong>：機器離線需要現場人員按電源鈕並檢查 BIOS；不要遠端反覆強制重開。</p>
+<h2 id="r9-備機連不到">R9 備機連不到</h2>
+<p><strong>症狀</strong>：外送失敗、<code>ssh</code> 逾時、<code>No route to host</code>。</p>
+<p><strong>先看</strong>（在正式主機）：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">ip route get 192.168.1.3
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">ssh -o BatchMode=yes -o ConnectTimeout=10 coffee@192.168.1.3 hostname
+</code></pre>
+<p><strong>判讀</strong>：路由應經 <code>eno1</code>、來源 <code>192.168.1.2</code>（與主要 IP 同一張網卡）。<code>No route</code>／逾時先查備機電源、線材、交換器；<code>Permission denied</code> 則是金鑰或帳號問題（回到 R4）。</p>
+<p><strong>升級</strong>：備機管理員或網管。</p>
+<h2 id="r10-忘記-gitea-密碼">R10 忘記 Gitea 密碼</h2>
+<p><strong>症狀</strong>：使用者無法登入。</p>
+<p><strong>先看</strong>：Gitea 目前<strong>沒有啟用 SMTP</strong>，不會寄出重設信，不要承諾「點忘記密碼就會收到信」。</p>
+<p><strong>判讀</strong>：必須由 Gitea 管理員先確認使用者身分，再於管理介面重設密碼並要求使用者登入後立即更改。</p>
+<p><strong>升級</strong>：Gitea 管理員；不得共用密碼，也不得把密碼貼進聊天或工單。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#r1-gitea-網站打不開">R1 Gitea 網站打不開</a><a href="#r2-git-pushclone-失敗">R2 Git push／clone 失敗</a><a href="#r3-git-ssh2222不通但網站可開">R3 Git SSH（2222）不通但網站可開</a><a href="#r4-備份失敗ssh-exit255">R4 備份失敗：ssh exit=255</a><a href="#r5-dailylog-是空的">R5 daily.log 是空的</a><a href="#r6-磁碟快滿">R6 磁碟快滿</a><a href="#r7-系統時間不對">R7 系統時間不對</a><a href="#r8-2200-之後機器立刻重開隔天-0700-沒有開機">R8 22:00 之後機器立刻重開／隔天 07:00 沒有開機</a><a href="#r9-備機連不到">R9 備機連不到</a><a href="#r10-忘記-gitea-密碼">R10 忘記 Gitea 密碼</a></aside></div>
+<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>各頁資料日期見頁首；非即時監控</span></footer></main></div>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="回到頁首">↑</button>
+</body></html>
