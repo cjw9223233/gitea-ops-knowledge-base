@@ -1,225 +1,447 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="以明確身分、受控權限與驗收責任交接。"><title>權限與交接 · Gitea 維運知識庫</title>
+<meta name="description" content="誰能做什麼、如何加人與離職、金鑰清冊，以及待收斂的權限。"><title>權限與帳號 · Gitea 維運知識庫</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23102c3c'/%3E%3Cpath d='m10 12 8 8-8 8m12 0h9' fill='none' stroke='%237ce4d4' stroke-width='3'/%3E%3C/svg%3E">
 <script>try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
 <link rel="stylesheet" href="styles.css"><script src="search-index.js" defer></script><script src="site.js" defer></script></head>
 <body><a class="skip" href="#main">跳至主要內容</a>
 <aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a>
 <div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋全站內容…" aria-label="搜尋全站內容" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的內容</p><div class="search-results" id="search-results" hidden></div></div>
-<div class="nav-groups"><div class="nav-group"><p class="nav-label">入門</p><nav class="nav" aria-label="入門"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a><a href="glossary.html"><span>03</span>名詞與圖解</a></nav></div><div class="nav-group"><p class="nav-label">架構</p><nav class="nav" aria-label="架構"><a href="system.html"><span>04</span>系統與服務</a><a href="network.html"><span>05</span>網路與連線</a></nav></div><div class="nav-group"><p class="nav-label">資料保護</p><nav class="nav" aria-label="資料保護"><a href="backup.html"><span>06</span>備份與備援</a><a href="restore.html"><span>07</span>還原與演練</a></nav></div><div class="nav-group"><p class="nav-label">營運</p><nav class="nav" aria-label="營運"><a href="daily.html"><span>08</span>日常巡檢</a><a href="logs.html"><span>09</span>Log 與產出物</a><a href="schedule.html"><span>10</span>排程管理</a><a href="hardware.html"><span>11</span>硬碟與開機排查</a><a href="runbook.html"><span>12</span>事件處理手冊</a></nav></div><div class="nav-group"><p class="nav-label">治理</p><nav class="nav" aria-label="治理"><a href="access.html" aria-current="page"><span>13</span>權限與交接</a><a href="changes.html"><span>14</span>變更與驗收</a></nav></div></div><div class="side-bottom"><strong>內部維運文件</strong>每頁標示資料日期與狀態<br>非即時監控</div></aside>
-<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 / 治理 /</span><b>權限與交接</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">手冊 <strong>v3</strong></div></header>
-<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 治理</p><h1>權限與交接</h1><p class="intro">以明確身分、受控權限與驗收責任交接。</p></div><div class="head-note">資料日期<strong>2026-10-06</strong><span class="chip snap">快照</span></div></header>
-<dl class="meta"><div><dt>這頁解決什麼</dt><dd>知道誰能做什麼、如何加人與離職，以及待收斂的權限。</dd></div><div><dt>前置知識</dt><dd>Linux 權限、Gitea 組織概念</dd></div><div><dt>風險等級</dt><dd><span class="risk r-chg">含變更</span></dd></div><div><dt>適合讀者</dt><dd><span class="aud">PM</span><span class="aud">維運</span><span class="aud">開發者</span></dd></div></dl>
+<div class="nav-groups"><div class="nav-group"><p class="nav-label">入門</p><nav class="nav" aria-label="入門"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a><a href="glossary.html"><span>03</span>名詞與圖解</a></nav></div><div class="nav-group"><p class="nav-label">架構</p><nav class="nav" aria-label="架構"><a href="system.html"><span>04</span>系統與服務</a><a href="network.html"><span>05</span>網路與連線</a></nav></div><div class="nav-group"><p class="nav-label">資料保護</p><nav class="nav" aria-label="資料保護"><a href="backup.html"><span>06</span>備份與備援</a><a href="restore.html"><span>07</span>還原與演練</a></nav></div><div class="nav-group"><p class="nav-label">營運</p><nav class="nav" aria-label="營運"><a href="daily.html"><span>08</span>日常巡檢</a><a href="logs.html"><span>09</span>Log 與產出物</a><a href="schedule.html"><span>10</span>排程管理</a><a href="hardware.html"><span>11</span>硬碟與開機排查</a><a href="runbook.html"><span>12</span>事件處理手冊</a></nav></div><div class="nav-group"><p class="nav-label">治理</p><nav class="nav" aria-label="治理"><a href="access.html" aria-current="page"><span>13</span>權限與帳號</a><a href="changes.html"><span>14</span>變更與驗收</a><a href="risks.html"><span>15</span>風險與待辦</a></nav></div></div><div class="side-bottom"><strong>內部維運文件</strong>每頁標示資料日期與狀態<br>非即時監控</div></aside>
+<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 / 治理 /</span><b>權限與帳號</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">手冊 <strong>v3</strong></div></header>
+<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 治理</p><h1>權限與帳號</h1><p class="intro">誰能做什麼、如何加人與離職、金鑰清冊，以及待收斂的權限。</p></div><div class="head-note">資料日期<strong>2026-10-06</strong><span class="chip snap">快照</span></div></header>
+<dl class="meta"><div><dt>這頁解決什麼</dt><dd>知道權限分四層、自己該有哪些、如何申請、離職怎麼收，以及哪些權限要收斂。</dd></div><div><dt>前置知識</dt><dd>Linux 權限基本概念、Gitea 組織概念（見名詞與圖解）</dd></div><div><dt>風險等級</dt><dd><span class="risk r-chg">含變更</span></dd></div><div><dt>適合讀者</dt><dd><span class="aud">PM</span><span class="aud">維運</span><span class="aud">開發者</span></dd></div></dl>
 <div class="notice"><strong>文件快照</strong><span>內容為資料日期當天的盤點，非即時監控。「已部署」不等於「已驗收」，未演練的步驟會標示「待演練」。</span></div>
 
-<div class="doc-layout"><article class="article"><h2 id="現行權限界線">現行權限界線</h2>
-<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
-<thead>
-<tr>
-<th>身分</th>
-<th>用途</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>coffee 一般帳號</td>
-<td>日常登入、查看可讀狀態；以既有 SSH 金鑰登入備機</td>
-</tr>
-<tr>
-<td>主機 root</td>
-<td>執行維護排程、保護備份檔、管理容器與關機</td>
-</tr>
-<tr>
-<td>備機 coffee</td>
-<td>接收封存檔及執行校驗；不是備機 root</td>
-</tr>
-</tbody>
-</table></div>
-<p>不要複製私鑰到報告、網站或 Git。正式備份目錄為 700，不能為了讓 scp 成功就改成全員可讀。</p>
-<h2 id="尚待收斂的權限">尚待收斂的權限</h2>
-<p>10/5 發現 Compose、data 與部分控制腳本權限過寬。應先核對容器的數字 UID/GID 與父目錄遍歷權限，再區分控制檔與資料目錄調整。不要整棵 chmod／chown，避免 PostgreSQL 無法啟動。</p>
-<h2 id="責任與驗收">責任與驗收</h2>
+<div class="doc-layout"><article class="article"><h2 id="四層權限">四層權限</h2>
+<figure class="diagram"><svg viewBox="0 0 780 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="al-t">
+<title id="al-t">圖：四層權限——網路白名單、Linux SSH 與 sudo、Docker、Gitea；每一層都要通過</title>
+<defs><marker id="al-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5c6c78"/></marker></defs>
+<rect class="box2" x="14" y="14" width="500" height="64" rx="10"/><text x="30" y="40" font-size="14" font-weight="700">① 網路白名單</text><text x="30" y="60" class="small">能不能接觸服務埠（3000／2222／22）｜誰管：網管、Linux 管理員</text>
+<rect class="box" x="14" y="92" width="500" height="64" rx="10"/><text x="30" y="118" font-size="14" font-weight="700">② Linux SSH 與 sudo</text><text x="30" y="138" class="small">能不能進主機、改設定、讀備份｜誰管：Linux 管理員（目前只有一個共用帳號 coffee）</text>
+<rect class="badbox" x="14" y="170" width="500" height="64" rx="10"/><text x="30" y="196" font-size="14" font-weight="700">③ Docker 群組　⚠ 等同 root</text><text x="30" y="216" class="small">能不能操作容器與掛載資料｜不給一般開發者；視同高權限維運</text>
+<rect class="okbox" x="14" y="248" width="500" height="64" rx="10"/><text x="30" y="274" font-size="14" font-weight="700">④ Gitea 組織／團隊／儲存庫</text><text x="30" y="294" class="small">能看、改哪些專案、Issue 與 PR｜誰管：Gitea 管理員、專案負責人</text>
+<rect class="box2" x="548" y="14" width="218" height="298" rx="12"/>
+<text x="657" y="44" text-anchor="middle" font-size="14" font-weight="700">誰需要哪一層？</text>
+<text x="566" y="76" class="small">開發者／查閱者</text><text x="566" y="96" font-size="13" font-weight="700">① ＋ ④</text>
+<text x="566" y="130" class="small">專案維護者</text><text x="566" y="150" font-size="13" font-weight="700">① ＋ ④（Admin）</text>
+<text x="566" y="184" class="small">Linux 維運（少數具名）</text><text x="566" y="204" font-size="13" font-weight="700">① ＋ ② ＋ ③</text>
+<text x="566" y="238" class="small">網管</text><text x="566" y="258" font-size="13" font-weight="700">① ＋（②視需要）</text>
+<text x="566" y="292" class="small">開發者不需要 ② ③</text>
+<path class="line" d="M514 46 L548 46" marker-end="url(#al-arr)"/>
+</svg><figcaption></figcaption></figure>
+
+<div class="admonition tip">
+<p class="admonition-title">白話說明</p>
+<p>想進到 Gitea 做事，要同時通過四道門：<strong>① 網路放行 → ② 有主機帳號（只有維運需要）→ ③ Docker 權限（只有維運需要）→ ④ Gitea 裡有被授權的專案</strong>。一般開發者只需要 ① 和 ④。<strong>docker 群組等同 root</strong>：能操作容器就能讀寫所有掛載的資料，不能因為「只是看看 Docker」就給。</p>
+</div>
+<h2 id="現況事實資料日期標在每列">現況事實（資料日期標在每列）</h2>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
 <tr>
 <th>項目</th>
-<th>負責角色</th>
-<th>完成條件</th>
+<th>現況</th>
+<th>資料日期</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>備份與傳輸</td>
-<td>Linux 管理員</td>
-<td>正式 daily 遠端 checksum 與 SUCCESS，容量可追蹤</td>
+<td>主機一般帳號</td>
+<td>只有 <code>coffee</code>（UID 1000），屬 <code>sudo</code>、<code>docker</code>、<code>adm</code>；<strong>多人共用一個帳號，無法分辨是誰操作</strong></td>
+<td>2026-10-06</td>
 </tr>
 <tr>
-<td>異機保留</td>
-<td>備機管理員</td>
-<td>有保留政策，清理只針對已驗證受管理副本</td>
+<td>sudo</td>
+<td>可 sudo 執行所有命令（多數需要密碼）；9/21 記錄另可免密碼執行 <code>/sbin/shutdown</code>，目前 <code>/etc/sudoers.d</code> 只有 README，該設定位置待確認</td>
+<td>2026-10-06</td>
 </tr>
 <tr>
-<td>還原演練</td>
-<td>Gitea 管理員</td>
-<td>隔離驗證 Git、DB、LFS、附件、Issue／PR、權限</td>
+<td>其他家目錄</td>
+<td><code>/home/cjw</code>（權限 777）、<code>/home/foo</code>、<code>/home/testg</code>、<code>/home/myXAMPP</code>（766）殘留，用途待確認</td>
+<td>2026-10-06</td>
 </tr>
 <tr>
-<td>校時與網路</td>
-<td>網管</td>
-<td>可信 NTP、備機路由、實際頻寬可確認</td>
+<td>SSH 設定</td>
+<td>設定檔寫明 <code>PermitRootLogin yes</code>、<code>PasswordAuthentication yes</code>、<code>X11Forwarding yes</code>；<strong>是檔案內容，尚未用 root 的 <code>sshd -T</code> 驗證實際生效值</strong></td>
+<td>2026-10-06</td>
 </tr>
 <tr>
-<td>告警與維護窗口</td>
-<td>PM／值班人</td>
-<td>指定接收人、回應時間、服務中斷與回復界線</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="個人帳號治理基準921">個人帳號治理基準（9/21）</h2>
-<h3 id="5-帳號權限與專案治理">5. 帳號、權限與專案治理</h3>
-<h3 id="51-四層權限">5.1 四層權限</h3>
-<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
-<thead>
-<tr>
-<th>層次</th>
-<th>管什麼</th>
-<th>應授予誰</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>網路白名單</td>
-<td>能否接觸服務埠</td>
-<td>核准的來源網路／設備</td>
+<td>主機防火牆</td>
+<td><code>ufw</code> inactive、<code>fail2ban</code> inactive；<code>netfilter-persistent</code> active，白名單由 <code>DOCKER-USER</code> 規則實作</td>
+<td>2026-10-06</td>
 </tr>
 <tr>
-<td>Linux SSH／sudo</td>
-<td>主機、設定、檔案與系統服務</td>
-<td>少數具名維運人員</td>
-</tr>
-<tr>
-<td>Docker</td>
-<td>能操作容器及主機掛載資料</td>
-<td>視同高權限維運，不給一般開發者</td>
-</tr>
-<tr>
-<td>Gitea 組織／團隊／儲存庫</td>
-<td>原始碼、Issue、PR 及專案管理</td>
-<td>依工作職責授權</td>
+<td>Gitea 帳號</td>
+<td>17 帳號、1 位站台管理員、<strong>0 位啟用雙因素驗證</strong>、<strong>0 條分支保護</strong>、可自行註冊、允許匿名檢視</td>
+<td>2026-09-21</td>
 </tr>
 </tbody>
 </table></div>
-<p>本機 <code>coffee</code> 屬於 <code>sudo</code>、<code>docker</code>、<code>adm</code> 等群組，可 sudo 執行所有命令（大多需要密碼），另可免密碼執行 <code>/sbin/shutdown</code>。Docker 群組實質上具有 root 等級能力，不能用它當作「只看 Docker」的權限。<a href="https://docs.docker.com/engine/install/linux-postinstall/">Docker 權限說明</a></p>
-<h3 id="52-目前-linux-與資料檔權限問題">5.2 目前 Linux 與資料檔權限問題</h3>
+<h2 id="目錄與檔案權限">目錄與檔案權限</h2>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
 <tr>
-<th>路徑／項目</th>
+<th>路徑</th>
 <th>盤點值</th>
 <th>管理解讀</th>
+<th>資料日期</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>/home/coffee/.ssh</code></td>
-<td>700，1000:1000</td>
-<td>正常的個人 SSH 目錄限制</td>
+<td>700</td>
+<td>正常</td>
+<td>2026-10-05</td>
 </tr>
 <tr>
 <td><code>authorized_keys</code></td>
-<td>600，1000:1000</td>
-<td>僅所有者可讀寫；這是檔案，不能 <code>cd</code> 進去</td>
+<td>600</td>
+<td>正常；這是檔案，不能 <code>cd</code> 進去</td>
+<td>2026-10-05</td>
 </tr>
 <tr>
 <td><code>/home/Gitea</code>、<code>config</code></td>
-<td>766，1000:1000</td>
-<td>目錄權限不尋常；群組與其他人沒有 traverse 的 x，不能簡化解讀為所有人都能進入</td>
+<td>766（coffee:coffee）</td>
+<td>權限不尋常；其他人沒有進入目錄的 x，不能簡化解讀為「所有人都能進入」</td>
+<td>2026-10-06</td>
 </tr>
 <tr>
 <td><code>config/app.ini</code></td>
-<td>766，0:0</td>
-<td>機密設定檔不應有廣泛寫入權及 executable bit；須連同父目錄與容器 UID 一起修正</td>
+<td>766（root:root）</td>
+<td>機密設定檔不應有廣泛寫入權與 executable bit；要連同父目錄與容器 UID 一起規劃</td>
+<td>2026-09-21</td>
 </tr>
 <tr>
 <td><code>docker-compose.yml</code></td>
-<td>766，1000:1000</td>
-<td>含 DB 密碼；應縮小讀寫範圍</td>
+<td>766（coffee:coffee）</td>
+<td>含資料庫密碼；應縮小讀寫範圍</td>
+<td>2026-10-06</td>
 </tr>
 <tr>
 <td><code>data</code></td>
-<td>777，1000:1000</td>
+<td>777（coffee:coffee）</td>
 <td>容器資料目錄權限過寬</td>
+<td>2026-10-06</td>
 </tr>
 <tr>
 <td><code>gitea-access-rules.sh</code></td>
-<td>777，0:0</td>
-<td>高權限執行腳本可被非 root 改寫，列為優先修正</td>
+<td>777（root:root）</td>
+<td><strong>最優先</strong>：高權限執行腳本可被非 root 改寫</td>
+<td>2026-10-06</td>
 </tr>
 <tr>
 <td><code>postgres</code></td>
-<td>700，999:1000</td>
-<td>數字 UID 999 對應容器 postgres；主機顯示 dnsmasq 只是同 UID 名稱，不代表資料屬於 DNS 服務</td>
+<td>700（UID 999:coffee 群組）</td>
+<td>數字 UID 999 對應容器的 postgres；主機上顯示 <code>dnsmasq</code> 只是同號碼的名稱，不代表資料屬於 DNS 服務</td>
+<td>2026-10-06</td>
+</tr>
+<tr>
+<td><code>/var/backups/gitea-maintenance</code>、<code>/var/log/gitea-maintenance</code></td>
+<td>700（root）</td>
+<td>正確；不要為了讓 <code>scp</code> 成功就放寬</td>
+<td>2026-10-06</td>
 </tr>
 </tbody>
 </table></div>
-<p>建議由管理員在測試／維護時段逐項修正：Gitea 的 config/data 需讓 UID 1000 正常存取；app.ini 可朝 600 且讓執行 UID 正確持有的方向設計；Compose 只給部署管理者讀寫；防火牆腳本應 root 持有且不可讓一般帳號改寫。<strong>不要對整個 <code>/home/Gitea</code> 執行同一組遞迴 chown／chmod</strong>，因為 PostgreSQL、Git hooks、SSH 機密與一般資料的需求不同。</p>
-<p>主機 <code>sshd_config</code> 明文設定 <code>PermitRootLogin yes</code>、<code>PasswordAuthentication yes</code>、<code>X11Forwarding yes</code>。這是檔案內容，尚未用 root 執行 <code>sshd -T</code> 驗證完整生效值。改善時先準備兩個可用的具名管理帳號與金鑰、驗證 sudo 及主控台，再收斂 root／密碼登入；不能先關掉唯一能登入的方式。</p>
-<h3 id="53-新人加入流程">5.3 新人加入流程</h3>
-<ol>
-<li>PM 指定專案、直屬負責人、需要的權限及有效期間。</li>
-<li>網管處理連線來源；一般開發者不用申請 Linux 或 Docker 權限。</li>
-<li>Gitea 管理員確認帳號，加入正確組織及團隊；新手先 Read，確需提交才授 Write。</li>
-<li>使用者在自己的電腦建立個人 SSH 金鑰，只把<strong>公鑰</strong>加入 Gitea「設定 → SSH／GPG 金鑰」；私鑰不傳給同事。</li>
-<li>啟用雙因素驗證並安全保存復原碼。因主機校時異常，先完成 NTP 修復，再集中推行 TOTP，避免大量無法登入。</li>
-<li>用指定測試專案驗證 clone、分支、PR。授 Write 的人驗證可提交測試分支；授 Read 的人應確認不能推送。</li>
-<li>讀取專案 README、建置方法、部署方式與負責人資訊；完成交接清單。</li>
-</ol>
-<p>目前 SMTP 未啟用，不要承諾「忘記密碼一定能收重設信」。管理員須建立可追溯的身分確認及帳號復原流程。</p>
-<h3 id="54-建議的-gitea-權限配置">5.4 建議的 Gitea 權限配置</h3>
+<h2 id="角色與責任">角色與責任</h2>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
 <tr>
-<th>身分</th>
-<th>建議權限</th>
-<th>不需要的權限</th>
+<th>工作</th>
+<th>PM</th>
+<th>Linux 管理員</th>
+<th>Gitea 管理員</th>
+<th>網管</th>
+<th>開發者</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>參與規格／查閱的人</td>
-<td>專案 Read，加上需要的 Issue／PR 單元權限</td>
-<td>Linux、Docker、站台管理</td>
+<td>新人加入（帳號／權限）</td>
+<td>A</td>
+<td>I</td>
+<td>R</td>
+<td>C（連線來源）</td>
+<td>申請</td>
 </tr>
 <tr>
-<td>開發者</td>
-<td>指定 repository 的 Code Write</td>
-<td>全組織 Owner、站台管理</td>
+<td>白名單變更</td>
+<td>A</td>
+<td>R（主機規則）</td>
+<td>I</td>
+<td>R（上游 ACL）</td>
+<td>申請</td>
 </tr>
 <tr>
-<td>專案維護者</td>
-<td>需要時給 repository Admin</td>
-<td>全站管理，除非兼任站台維運</td>
+<td>備份與外送</td>
+<td>I</td>
+<td>R／A</td>
+<td>I</td>
+<td>C</td>
+<td>—</td>
 </tr>
 <tr>
-<td>組織負責人</td>
-<td>組織 Owner，至少建立代理人</td>
-<td>不因此自動取得主機 root</td>
+<td>還原演練</td>
+<td>A</td>
+<td>R</td>
+<td>R（驗收功能）</td>
+<td>I</td>
+<td>I</td>
 </tr>
 <tr>
-<td>站台管理員</td>
-<td>少量具名帳號、MFA、定期稽核</td>
-<td>共用密碼／共用權杖</td>
+<td>校時修復</td>
+<td>I</td>
+<td>R</td>
+<td>—</td>
+<td>A／R</td>
+<td>—</td>
+</tr>
+<tr>
+<td>權限收斂（目錄、SSH）</td>
+<td>A</td>
+<td>R</td>
+<td>C</td>
+<td>C</td>
+<td>—</td>
+</tr>
+<tr>
+<td>離職處理</td>
+<td>A</td>
+<td>R（Linux）</td>
+<td>R（Gitea）</td>
+<td>R（來源）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>事件通報與升級</td>
+<td>A／R</td>
+<td>R</td>
+<td>R</td>
+<td>R</td>
+<td>回報</td>
 </tr>
 </tbody>
 </table></div>
-<p>Gitea 可分別設定 Code、Issues、Pull Requests 等單元權限，授權後仍要用實際帳號驗證。<a href="https://docs.gitea.com/1.23/usage/permissions/">Gitea 1.23 權限文件</a></p>
-<p>建議關鍵專案使用組織持有，降低綁定單一個人帳號的風險。對 main／master／正式版本分支設定保護，要求 PR、至少一位審查者，限制 force push 及刪除；具體規則由各專案負責人核准。目前沒有註冊 Runner，不要把尚未建立的 CI 檢查設為必須通過而造成無法合併。</p>
-<h3 id="55-離職轉調與金鑰管理">5.5 離職、轉調與金鑰管理</h3>
-<p>離職當日先停用 Gitea 帳號、移除組織／團隊權限、撤銷個人 token 與不再使用的金鑰，再交接個人名下的重要專案、Webhook、鏡像認證與機器帳號。另由系統管理員處理 Linux 帳號、sudo／Docker 群組與 authorized_keys；網管撤銷不再需要的來源白名單。</p>
-<p>不可為了交接直接刪除唯一管理員、重要專案擁有者或尚未轉移的資料。復原碼、DB 密碼、SMTP 密碼、OAuth/LFS/JWT 等機密放在受控密碼庫；備份也必須保留必要機密，否則還原後部分功能可能失效。</p>
-<p>本次為 Codex 建立的 SSH 公鑰只用於本次授權工作。它沒有被證實受到 SSH forced-command 的技術限制；「唯讀」是此次操作範圍，不等於 coffee 帳號本身是唯讀帳號。工作結束後由管理員決定撤銷或納入正式金鑰清冊。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#現行權限界線">現行權限界線</a><a href="#尚待收斂的權限">尚待收斂的權限</a><a href="#責任與驗收">責任與驗收</a><a href="#個人帳號治理基準921">個人帳號治理基準（9/21）</a></aside></div>
+<p>R＝執行、A＝負責核准、C＝需諮詢、I＝需知會。<strong>負責人姓名尚待 PM 填寫：</strong></p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>角色</th>
+<th>姓名</th>
+<th>代理人</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PM</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Linux 管理員</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Gitea 管理員</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>網管</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>備機管理員</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="新手我需要什麼權限">新手：我需要什麼權限？</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>我想做的事</th>
+<th>需要</th>
+<th>去找誰</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>讀程式碼、開 Issue</td>
+<td>連線來源＋Gitea 專案 Read</td>
+<td>Gitea 管理員／專案負責人</td>
+</tr>
+<tr>
+<td>提交程式碼、開 PR</td>
+<td>連線來源＋專案 Write</td>
+<td>專案負責人</td>
+</tr>
+<tr>
+<td>管理專案設定與分支保護</td>
+<td>專案 Admin</td>
+<td>專案負責人／Gitea 管理員</td>
+</tr>
+<tr>
+<td>看主機狀態、讀日誌</td>
+<td>具名 Linux 帳號（尚未建立）；目前只有共用 <code>coffee</code></td>
+<td>Linux 管理員</td>
+</tr>
+<tr>
+<td>改設定、做備份還原</td>
+<td>Linux 管理員，且經過變更流程</td>
+<td>PM 核准</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>一般開發者不需要 Linux 或 Docker 權限。</strong></p>
+<h2 id="新人加入轉調離職">新人加入、轉調、離職</h2>
+<p><strong>新人加入</strong>（可貼進工單）：</p>
+<ul>
+<li>☐ PM 指定專案、直屬負責人、需要的權限與有效期間。</li>
+<li>☐ 網管確認連線來源（見 <a href="network.html">網路與連線</a> 的申請單）。</li>
+<li>☐ Gitea 管理員確認帳號、加入正確組織與團隊；新手先給 Read，確需提交才給 Write。</li>
+<li>☐ 使用者在<strong>自己的電腦</strong>建立個人 SSH 金鑰，只把<strong>公鑰</strong>加入 Gitea「設定 → SSH／GPG 金鑰」；私鑰不傳給任何人。</li>
+<li>☐ 校時修好後，再推行雙因素驗證（TOTP 依賴正確時間）。</li>
+<li>☐ 用指定測試專案驗證：Write 的人能推送測試分支；Read 的人<strong>不能</strong>推送。</li>
+<li>☐ 讀完專案 README、建置與部署方式，完成交接清單。</li>
+</ul>
+<p>Gitea 目前沒有啟用 SMTP，不要承諾「忘記密碼一定收得到信」；管理員須建立可追溯的身分確認與復原流程。</p>
+<p><strong>離職或轉調當日</strong>（順序）：</p>
+<ul>
+<li>☐ 先停用 Gitea 帳號，移除組織與團隊權限，撤銷個人 token 與不再使用的金鑰。</li>
+<li>☐ 交接個人名下的重要專案、Webhook、鏡像認證與機器帳號；<strong>不要</strong>直接刪除唯一管理員、重要專案擁有者或尚未轉移的資料。</li>
+<li>☐ 由 Linux 管理員處理主機帳號、<code>sudo</code>／<code>docker</code> 群組與 <code>authorized_keys</code>。</li>
+<li>☐ 網管撤銷不再需要的來源白名單。</li>
+<li>☐ 復原碼、資料庫密碼、SMTP 密碼、OAuth／LFS／JWT 等機密放在受控密碼庫；備份也必須保留必要機密，否則還原後部分功能可能失效。</li>
+</ul>
+<h2 id="金鑰清冊">金鑰清冊</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>金鑰</th>
+<th>位置</th>
+<th>持有者／用途</th>
+<th>建立日</th>
+<th>撤銷條件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Codex 專用公鑰</td>
+<td>主機 <code>coffee</code> 的 <code>authorized_keys</code></td>
+<td>2026-09 至 10 月的稽核與修正工作</td>
+<td>2026-09</td>
+<td>工作結束後由管理員決定撤銷或納入正式清冊</td>
+</tr>
+<tr>
+<td>Claude 唯讀盤點公鑰（註解 <code>claude-sps-readonly-10-253-114-160-20261005</code>）</td>
+<td>主機 <code>coffee</code> 的 <code>authorized_keys</code></td>
+<td>2026-10-05 起的唯讀盤點，經 <code>ro_ssh.py</code> 限制指令並留稽核紀錄</td>
+<td>2026-10-05</td>
+<td><strong>盤點結束後撤銷</strong>；若要保留，需納入正式清冊並指派持有者</td>
+</tr>
+<tr>
+<td>個人 Gitea SSH 公鑰</td>
+<td>各人在 Gitea 帳號</td>
+<td>個人 clone／push</td>
+<td>各自</td>
+<td>離職或轉調當日撤銷</td>
+</tr>
+<tr>
+<td><code>coffee</code> 主機到備機的金鑰</td>
+<td>主機 <code>coffee</code> 家目錄 <code>.ssh</code></td>
+<td>備份外送的 SSH 登入備機</td>
+<td>既有</td>
+<td>換備機或金鑰輪替時更換；私鑰不複製、不放進文件</td>
+</tr>
+</tbody>
+</table></div>
+<div class="admonition warning">
+<p class="admonition-title">「唯讀」是工作範圍，不是技術限制</p>
+<p>上述專用金鑰登入的帳號仍是 <code>coffee</code>，本身有 <code>sudo</code> 與 <code>docker</code> 權限。「唯讀」靠的是<strong>操作紀律與工具檢查</strong>，並沒有 SSH <code>forced-command</code> 之類的技術強制。因此專用金鑰要在工作結束後撤銷，私鑰檔也不可放進會被提交或分享的資料夾。</p>
+</div>
+<h2 id="權限修正先量再改不遞迴">權限修正：先量、再改、不遞迴</h2>
+<div class="admonition danger">
+<p class="admonition-title">不要對整個 <code>/home/Gitea</code> 執行遞迴的 chmod 或 chown</p>
+<p>PostgreSQL（UID 999）、Gitea（UID 1000）、Git hooks、SSH 機密與一般資料的需求不同；整棵改權限可能讓資料庫無法啟動。每次只改<strong>一個檔案</strong>，並先記錄原值。</p>
+</div>
+<p>先量（唯讀）：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">stat -c '%a %U:%G %n' /home/Gitea /home/Gitea/config /home/Gitea/data /home/Gitea/postgres /home/Gitea/docker-compose.yml /home/Gitea/gitea-access-rules.sh
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">docker exec gitea-server-1 id
+</code></pre>
+<p>建議順序（每一步都先記錄原值，改完驗收，失敗就回退）：</p>
+<ol>
+<li><strong><code>gitea-access-rules.sh</code></strong>（風險最高）：收回非 root 的寫入權限。</li>
+</ol>
+<pre data-level="chg" data-label="變更 · Linux bash"><code class="language-bash">sudo chmod 750 /home/Gitea/gitea-access-rules.sh
+</code></pre>
+<ol start="2">
+<li><strong><code>docker-compose.yml</code></strong>（含資料庫密碼）：縮小讀寫範圍，仍讓管理者可讀。</li>
+</ol>
+<pre data-level="chg" data-label="變更 · Linux bash"><code class="language-bash">sudo chmod 640 /home/Gitea/docker-compose.yml
+</code></pre>
+<ol start="3">
+<li><strong><code>config/app.ini</code> 與 <code>data</code></strong>：需要先確認容器 UID 1000 是否能正常讀寫，<strong>在隔離環境測試</strong>後再調整（見 <a href="restore.html">還原與演練</a> 的隔離環境）。</li>
+<li><strong><code>/home/cjw</code> 等殘留目錄</strong>：確認無用途後再收斂或移除。</li>
+</ol>
+<p><strong>驗收</strong>：每改一項後，確認 <code>healthz</code> 為 pass、能 clone 與 push 測試分支、備份排程下一輪仍成功。<strong>回退</strong>：把該檔案改回記錄的原值（例如 <code>sudo chmod 766 &lt;檔案&gt;</code>）；任何一步造成容器異常，立刻回退並通知 Linux 管理員。</p>
+<h2 id="ssh-強化兩階段">SSH 強化：兩階段</h2>
+<p>目前 <code>PermitRootLogin yes</code> 與 <code>PasswordAuthentication yes</code>（檔案內容，待驗證實際值）：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo sshd -T | grep -E 'permitrootlogin|passwordauthentication|x11forwarding'
+</code></pre>
+<ol>
+<li><strong>階段一（先建立退路）</strong>：為每位維運人員建立<strong>具名</strong>主機帳號與個人金鑰；驗證 <code>sudo</code>、現場主控台可用；確認備份外送的 coffee 金鑰不受影響。</li>
+<li><strong>階段二（再收斂）</strong>：在維護時段關閉 root 登入與密碼登入，重新載入設定並<strong>保持原連線不斷</strong>，另開一個連線驗證新帳號可登入後，才關閉原連線。<strong>絕對不要先關掉唯一能登入的方式</strong>。</li>
+</ol>
+<h2 id="gitea-治理建議">Gitea 治理建議</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>現況</th>
+<th>建議</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>分支保護</td>
+<td>0 條</td>
+<td>對 <code>main</code>／正式分支要求 Pull Request、至少一位審查者、限制 force push 與刪除；沒有註冊 Runner，不要把尚未存在的 CI 設為必過</td>
+</tr>
+<tr>
+<td>雙因素驗證</td>
+<td>0 個帳號</td>
+<td>先修好校時，再分批推行 TOTP，並安全保存復原碼</td>
+</tr>
+<tr>
+<td>註冊</td>
+<td>可自行註冊</td>
+<td>評估關閉，改為管理員建立</td>
+</tr>
+<tr>
+<td>匿名檢視</td>
+<td><code>REQUIRE_SIGNIN_VIEW=false</code></td>
+<td>由專案負責人確認是否所有可連線者都應看見非私有專案</td>
+</tr>
+<tr>
+<td>重要專案持有</td>
+<td>多為個人名下</td>
+<td>改由組織持有，並至少建立一位代理 Owner</td>
+</tr>
+<tr>
+<td>站台管理員</td>
+<td>1 位</td>
+<td>少量具名、啟用 MFA、定期稽核；不共用密碼或權杖</td>
+</tr>
+</tbody>
+</table></div>
+<p>Gitea 可分別設定 Code、Issues、Pull Requests 等單元權限，授權後要用實際帳號驗證。<a href="https://docs.gitea.com/1.23/usage/permissions/">Gitea 1.23 權限文件</a></p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#四層權限">四層權限</a><a href="#現況事實資料日期標在每列">現況事實（資料日期標在每列）</a><a href="#目錄與檔案權限">目錄與檔案權限</a><a href="#角色與責任">角色與責任</a><a href="#新手我需要什麼權限">新手：我需要什麼權限？</a><a href="#新人加入轉調離職">新人加入、轉調、離職</a><a href="#金鑰清冊">金鑰清冊</a><a href="#權限修正先量再改不遞迴">權限修正：先量、再改、不遞迴</a><a href="#ssh-強化兩階段">SSH 強化：兩階段</a><a href="#gitea-治理建議">Gitea 治理建議</a></aside></div>
 <footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>各頁資料日期見頁首；非即時監控</span></footer></main></div>
 <button class="back-to-top" id="back-to-top" type="button" aria-label="回到頁首">↑</button>
 </body></html>

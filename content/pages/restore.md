@@ -157,4 +157,4 @@ cd /srv/gitea-restore && docker compose -p gitea-restore -f docker-compose.yml d
 | 實測 RTO | |
 | 負責人與核准人 | |
 
-演練後，把本頁的「待演練」改為「已驗證（日期）」，更新 [備份與備援](backup.html) 的 RTO，並在「風險與待辦」結案相關項目。
+演練後，把本頁的「待演練」改為「已驗證（日期）」，更新 [備份與備援](backup.html) 的 RTO，並在 [風險與待辦](risks.html) 結案相關項目。

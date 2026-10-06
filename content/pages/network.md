@@ -28,7 +28,7 @@
 
 | 埠 | 用途 | 綁定位址 | 建議 |
 |---|---|---|---|
-| TCP 22 | Linux SSH（維運） | 全介面（IPv4／IPv6） | 只給維運來源；長期要關閉 root 與密碼登入，見 [權限與交接](access.html) |
+| TCP 22 | Linux SSH（維運） | 全介面（IPv4／IPv6） | 只給維運來源；長期要關閉 root 與密碼登入，見 [權限與帳號](access.html) |
 | TCP 3000 | Gitea HTTP | 全介面 | 限核准來源；規劃 HTTPS（目前為明文 HTTP） |
 | TCP 2222 | Gitea 內建 Git SSH | 全介面 | 限核准來源；使用個人 Gitea 公鑰 |
 | **TCP 9090** | **未確認** | 全介面 | **新出現**：9/21 盤點沒有。先確認行程與用途，再決定開放或關閉；可能與 `/home/myXAMPP` 的容器有關，未證實 |
@@ -79,7 +79,7 @@ UFW 為 inactive、fail2ban 為 inactive（2026-10-06）。Docker 發布的埠�
 | 核准人（PM／網管） | |
 | 測試結果（允許來源／拒絕來源） | |
 
-只有白名單還不夠，還要另做 [權限與交接](access.html) 的 Gitea 帳號與專案授權。
+只有白名單還不夠，還要另做 [權限與帳號](access.html) 的 Gitea 帳號與專案授權。
 
 ## 校時（NTP）：目前是壞的
 
