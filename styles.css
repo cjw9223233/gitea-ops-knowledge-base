@@ -124,3 +124,4 @@ body{font-size:16px}.article{font-size:16px;line-height:1.85}.article table{font
 .checklist li{padding-left:30px;position:relative;margin:6px 0}
 .checklist li::before{content:"☐";position:absolute;left:4px;color:var(--accent);font-size:18px;line-height:1.5}
 @media print{.entry,.roles,.search-results,.nav-search{display:none}.diagram{break-inside:avoid}.admonition,.meta>div{break-inside:avoid}.article pre[data-level]::before{color:#000;background:#ddd}}
+@media(max-width:760px){.meta{grid-template-columns:1fr 1fr;gap:8px}.meta>div{padding:9px 11px}.meta>div:first-child{grid-column:1/-1}.meta>div:last-child{grid-column:1/-1}.meta dd{font-size:14px}.entry-card{padding:18px}}
