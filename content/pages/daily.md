@@ -48,7 +48,7 @@ timedatectl show -p NTPSynchronized
 | RECOVERY REQUIRED | 確認 DB、Gitea 與 healthz，保留紀錄後依復原程序處理 |
 | 空白 daily.log | 日誌每天 00:00 輪替；查 .log.1 或 .gz；不直接判定沒執行 |
 | 22:00 後機器立刻重開 | 屬已知問題，見 [排程與電源](schedule.html)；不要反覆強制重開 |
-| syslog 很大、訊息被淹沒 | 見 [系統與網路](system.html) 的 snap 重啟迴圈 |
+| syslog 很大、訊息被淹沒 | 見 [系統與服務](system.html) 的 snap 重啟迴圈 |
 | BIOS 看不到 SSD | 依 [硬碟與開機排查](hardware.html) 保全備份、安排硬體檢查 |
 
 ## 需要交接的資訊
