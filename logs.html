@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="先定位，再判讀。同一工作需要分別驗證本機、異機與還原。"><title>Log 與產出物 · Gitea 維運知識庫</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23102c3c'/%3E%3Cpath d='m10 12 8 8-8 8m12 0h9' fill='none' stroke='%237ce4d4' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css"><script src="site.js" defer></script></head>
+<body><a class="skip" href="#main">跳至主要內容</a>
+<aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a>
+<p class="nav-label">操作與交接</p><nav class="nav" aria-label="知識庫導覽"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a><a href="system.html"><span>03</span>系統與網路</a><a href="daily.html"><span>04</span>日常巡檢</a><a href="logs.html" aria-current="page"><span>05</span>Log 與產出物</a><a href="schedule.html"><span>06</span>排程管理</a><a href="backup.html"><span>07</span>備份與還原</a><a href="hardware.html"><span>08</span>硬碟與開機排查</a><a href="access.html"><span>09</span>權限與交接</a><a href="changes.html"><span>10</span>變更與驗收</a></nav><div class="side-bottom"><strong>票務中心系統組</strong>內部維運文件<br>基準 2026.10.05</div></aside>
+<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>Log 與產出物</b></div><div class="edition">交接版 <strong>02</strong></div></header>
+<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 維護與交接</p><h1>Log 與產出物</h1><p class="intro">先定位，再判讀。同一工作需要分別驗證本機、異機與還原。</p></div><div class="head-note">最後證據更新<strong>2026 年 10 月 5 日</strong>18:33 · Asia/Taipei</div></header>
+<div class="notice"><strong>文件快照</strong><span>已部署不等於已驗收。新版正式異機傳輸與隔離還原，仍待確認。</span></div>
+
+<div class="doc-layout"><article class="article"><h2 id="_1">路徑速查</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>工作</th>
+<th>日誌</th>
+<th>產出物</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>平日 20:30</td>
+<td>/var/log/gitea-maintenance/daily.log</td>
+<td>本機 /var/backups/gitea-maintenance/daily/</td>
+</tr>
+<tr>
+<td>每週六 09:00</td>
+<td>/var/log/gitea-maintenance/weekly.log</td>
+<td>本機 /var/backups/gitea-maintenance/weekly/</td>
+</tr>
+<tr>
+<td>每日 22:00</td>
+<td>/var/log/gitea-maintenance/shutdown.log</td>
+<td>僅日誌，沒有備份檔</td>
+</tr>
+<tr>
+<td>daily 異機副本</td>
+<td>daily.log 內有遠端校驗結果</td>
+<td>備機 /home/coffee/gitea-backups/</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>weekly 目前不會傳到備機。</strong> 主機上的備份與狀態目錄由 root 持有、權限 700，查看時需要 sudo。</p>
+<h2 id="_2">讀取當前與輪替日誌</h2>
+<pre><code class="language-bash">sudo tail -n 100 /var/log/gitea-maintenance/daily.log
+</code></pre>
+<pre><code class="language-bash">sudo tail -n 100 /var/log/gitea-maintenance/weekly.log
+</code></pre>
+<pre><code class="language-bash">sudo tail -n 100 /var/log/gitea-maintenance/shutdown.log
+</code></pre>
+<pre><code class="language-bash">sudo ls -lh /var/log/gitea-maintenance/
+</code></pre>
+<p>若當前檔案是空的，查看最近輪替檔；檔名依清單為準。</p>
+<pre><code class="language-bash">sudo tail -n 100 /var/log/gitea-maintenance/daily.log.1
+</code></pre>
+<pre><code class="language-bash">sudo zcat /var/log/gitea-maintenance/daily.log.2.gz
+</code></pre>
+<h2 id="_3">查本機備份與容量</h2>
+<pre><code class="language-bash">sudo ls -lh /var/backups/gitea-maintenance/daily/
+</code></pre>
+<pre><code class="language-bash">sudo ls -lh /var/backups/gitea-maintenance/weekly/
+</code></pre>
+<pre><code class="language-bash">sudo du -sh /var/backups/gitea-maintenance/daily /var/backups/gitea-maintenance/weekly
+</code></pre>
+<pre><code class="language-bash">sudo find /var/backups/gitea-maintenance -maxdepth 3 -type f -printf '%p  %s bytes
+'
+</code></pre>
+<h2 id="coffee-sudo">查備機（coffee 執行，不加 sudo）</h2>
+<pre><code class="language-bash">ssh -o BatchMode=yes -o StrictHostKeyChecking=yes coffee@192.168.1.3 'ls -lh /home/coffee/gitea-backups/'
+</code></pre>
+<p>如果目錄不存在，可能尚未進入首次正式傳輸，請對照 daily.log；不等於 SSH 認證失敗。</p>
+<h2 id="_4">檔案與成功標記</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>名稱</th>
+<th>意義</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gitea-cold.tar.gz</td>
+<td>Gitea 設定、Git 資料與 PostgreSQL 冷備份</td>
+</tr>
+<tr>
+<td>system-files.tar.gz</td>
+<td>週備份的系統檔案</td>
+</tr>
+<tr>
+<td>images.txt</td>
+<td>備份當時的容器映像參考</td>
+</tr>
+<tr>
+<td>manifest.json</td>
+<td>備份型別與來源資訊</td>
+</tr>
+<tr>
+<td>SHA256SUMS</td>
+<td>檔案完整性校驗值</td>
+</tr>
+<tr>
+<td>SUCCESS</td>
+<td>本機備份完成，不等於還原演練</td>
+</tr>
+<tr>
+<td>REMOTE_SUCCESS</td>
+<td>本機記錄該份備份已通過備機校驗</td>
+</tr>
+<tr>
+<td>.partial 結尾資料夾</td>
+<td>執行中或失敗未完成，先查日誌，不直接刪除</td>
+</tr>
+</tbody>
+</table></div>
+<p>同一次正式 daily 應看到下列三種訊息：</p>
+<pre><code class="language-text">Services restored and health check passed
+Remote checksum verified: ...
+SUCCESS daily
+</code></pre>
+<p>單元測試也會輸出模擬的 Remote checksum verified，不能當成正式傳輸證據。資料夾名稱的 Z 為 UTC，例如 20261005T123000Z 對應台灣 10/5 20:30。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#_1">路徑速查</a><a href="#_2">讀取當前與輪替日誌</a><a href="#_3">查本機備份與容量</a><a href="#coffee-sudo">查備機（coffee 執行，不加 sudo）</a><a href="#_4">檔案與成功標記</a></aside></div>
+<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>狀態依盤點紀錄呈現，非即時監控</span></footer></main></div>
+</body></html>

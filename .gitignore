@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+.sites-runtime/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.zip
+*.bundle
+*.tar.gz

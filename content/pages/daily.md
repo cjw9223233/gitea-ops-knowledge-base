@@ -1,0 +1,40 @@
+## 每日五分鐘
+
+在正式主機 coffee 執行；以下只讀取狀態。
+
+```bash
+date -Is
+```
+
+```bash
+systemctl is-active cron
+```
+
+```bash
+docker ps --format '{{.Names}} {{.Status}}'
+```
+
+```bash
+curl --max-time 10 -fsS http://127.0.0.1:3000/api/healthz
+```
+
+```bash
+df -h / /home
+```
+
+healthz 預期 `status: pass`。接著查看 [daily 工作日誌](logs.html)，確認最近的異機備份，而不只是容器仍在執行。
+
+## 依症狀處理
+
+| 症狀 | 下一步 |
+|---|---|
+| Permission denied (publickey,password) | 確認本機 SSH 執行帳號與既有金鑰，不能只看遠端 coffee 帳號 |
+| No route to host／timeout | 先查備機電源、路由、鄰居與 TCP 22 |
+| Another backup/shutdown job is active | 查目前工作，不移除鎖檔來強行執行 |
+| RECOVERY REQUIRED | 確認 DB、Gitea 與 healthz，保留紀錄後依復原程序處理 |
+| 空白 daily.log | 查 .log.1 或 .gz 輪替檔；不直接判定沒執行 |
+| BIOS 看不到 SSD | 依 [硬碟與開機排查](hardware.html) 保全備份、安排硬體檢查 |
+
+## 需要交接的資訊
+
+記錄事件時間與時區、工作 ID、原始錯誤、最後本機／異機成功時間，以及操作前後服務狀態。不要將密碼、私鑰或資料庫連線密碼貼入交接紀錄。
