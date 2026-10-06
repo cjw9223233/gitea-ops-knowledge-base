@@ -1,66 +1,258 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="先證明可用，再承諾備援能力。"><title>備份與還原 · Gitea 維運知識庫</title>
+<meta name="description" content="先證明可用，再承諾備援能力。備機現在是備份接收點，不是熱備援。"><title>備份與備援 · Gitea 維運知識庫</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23102c3c'/%3E%3Cpath d='m10 12 8 8-8 8m12 0h9' fill='none' stroke='%237ce4d4' stroke-width='3'/%3E%3C/svg%3E">
 <script>try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
-<link rel="stylesheet" href="styles.css"><script src="site.js" defer></script></head>
+<link rel="stylesheet" href="styles.css"><script src="search-index.js" defer></script><script src="site.js" defer></script></head>
 <body><a class="skip" href="#main">跳至主要內容</a>
 <aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a>
-<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋頁面…" aria-label="搜尋導覽頁面" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的頁面</p></div>
-<p class="nav-label">操作與交接</p><nav class="nav" aria-label="知識庫導覽"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a><a href="system.html"><span>03</span>系統與網路</a><a href="daily.html"><span>04</span>日常巡檢</a><a href="logs.html"><span>05</span>Log 與產出物</a><a href="schedule.html"><span>06</span>排程管理</a><a href="backup.html" aria-current="page"><span>07</span>備份與還原</a><a href="hardware.html"><span>08</span>硬碟與開機排查</a><a href="access.html"><span>09</span>權限與交接</a><a href="changes.html"><span>10</span>變更與驗收</a></nav><div class="side-bottom"><strong>票務中心系統組</strong>內部維運文件<br>基準 2026.10.05</div></aside>
-<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>備份與還原</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">交接版 <strong>02</strong></div></header>
-<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 維護與交接</p><h1>備份與還原</h1><p class="intro">先證明可用，再承諾備援能力。</p></div><div class="head-note">最後證據更新<strong>2026 年 10 月 5 日</strong>18:33 · Asia/Taipei</div></header>
-<div class="notice"><strong>文件快照</strong><span>已部署不等於已驗收。新版正式異機傳輸與隔離還原，仍待確認。</span></div>
+<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋全站內容…" aria-label="搜尋全站內容" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的內容</p><div class="search-results" id="search-results" hidden></div></div>
+<div class="nav-groups"><div class="nav-group"><p class="nav-label">入門</p><nav class="nav" aria-label="入門"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a><a href="glossary.html"><span>03</span>名詞與圖解</a></nav></div><div class="nav-group"><p class="nav-label">架構</p><nav class="nav" aria-label="架構"><a href="system.html"><span>04</span>系統與服務</a><a href="network.html"><span>05</span>網路與連線</a></nav></div><div class="nav-group"><p class="nav-label">資料保護</p><nav class="nav" aria-label="資料保護"><a href="backup.html" aria-current="page"><span>06</span>備份與備援</a><a href="restore.html"><span>07</span>還原與演練</a></nav></div><div class="nav-group"><p class="nav-label">營運</p><nav class="nav" aria-label="營運"><a href="daily.html"><span>08</span>日常巡檢</a><a href="logs.html"><span>09</span>Log 與產出物</a><a href="schedule.html"><span>10</span>排程管理</a><a href="hardware.html"><span>11</span>硬碟與開機排查</a><a href="runbook.html"><span>12</span>事件處理手冊</a></nav></div><div class="nav-group"><p class="nav-label">治理</p><nav class="nav" aria-label="治理"><a href="access.html"><span>13</span>權限與帳號</a><a href="changes.html"><span>14</span>變更與驗收</a><a href="risks.html"><span>15</span>風險與待辦</a></nav></div></div><div class="side-bottom"><strong>內部維運文件</strong>每頁標示資料日期與狀態<br>非即時監控</div></aside>
+<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 / 資料保護 /</span><b>備份與備援</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">手冊 <strong>v3</strong></div></header>
+<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 資料保護</p><h1>備份與備援</h1><p class="intro">先證明可用，再承諾備援能力。備機現在是備份接收點，不是熱備援。</p></div><div class="head-note">資料日期<strong>2026-10-06</strong><span class="chip snap">快照</span></div></header>
+<dl class="meta"><div><dt>這頁解決什麼</dt><dd>了解備份分層、3-2-1 落差、備機角色、RPO／RTO、保留與每日／週／季驗收。</dd></div><div><dt>前置知識</dt><dd>RPO／RTO 概念（見名詞與圖解）</dd></div><div><dt>風險等級</dt><dd><span class="risk r-ro">唯讀</span></dd></div><div><dt>適合讀者</dt><dd><span class="aud">維運</span><span class="aud">PM</span></dd></div></dl>
+<div class="notice"><strong>文件快照</strong><span>內容為資料日期當天的盤點，非即時監控。「已部署」不等於「已驗收」，未演練的步驟會標示「待演練」。</span></div>
 
-<div class="doc-layout"><article class="article"><h2 id="_1">現行備份分層</h2>
+<div class="doc-layout"><article class="article"><h2 id="備份資料流">備份資料流</h2>
+<figure class="diagram"><svg viewBox="0 0 780 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="bf-t">
+<title id="bf-t">圖：備份資料流——平日 daily 冷備份並外送備機，週六 weekly 只存本機</title>
+<defs><marker id="bf-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5c6c78"/></marker></defs>
+<text x="14" y="22" font-size="14" font-weight="700">平日 20:30　daily</text>
+<rect class="box2" x="14" y="34" width="118" height="74" rx="10"/><text x="73" y="60" text-anchor="middle" font-size="13" font-weight="700">① 停止服務</text><text x="73" y="80" text-anchor="middle" class="small">先停 Gitea 再停 DB</text><text x="73" y="96" text-anchor="middle" class="small">約 3 分鐘</text>
+<rect class="box2" x="158" y="34" width="118" height="74" rx="10"/><text x="217" y="60" text-anchor="middle" font-size="13" font-weight="700">② 打包</text><text x="217" y="80" text-anchor="middle" class="small">gitea-cold.tar.gz</text><text x="217" y="96" text-anchor="middle" class="small">恢復服務＋healthz</text>
+<rect class="okbox" x="302" y="34" width="150" height="74" rx="10"/><text x="377" y="58" text-anchor="middle" font-size="13" font-weight="700">③ 本機 daily/</text><text x="377" y="78" text-anchor="middle" class="small">/var/backups/</text><text x="377" y="94" text-anchor="middle" class="small">gitea-maintenance（SUCCESS）</text>
+<rect class="box2" x="478" y="34" width="132" height="74" rx="10"/><text x="544" y="58" text-anchor="middle" font-size="13" font-weight="700">④ root→coffee SSH</text><text x="544" y="78" text-anchor="middle" class="small">stdin 串流到備機</text><text x="544" y="94" text-anchor="middle" class="small">寫入 .partial</text>
+<rect class="okbox" x="636" y="34" width="132" height="74" rx="10"/><text x="702" y="58" text-anchor="middle" font-size="13" font-weight="700">⑤ 備機</text><text x="702" y="78" text-anchor="middle" class="small">sha256sum -c 通過</text><text x="702" y="94" text-anchor="middle" class="small">才改名發布</text>
+<path class="line" d="M132 71 L158 71" marker-end="url(#bf-arr)"/><path class="line" d="M276 71 L302 71" marker-end="url(#bf-arr)"/><path class="line" d="M452 71 L478 71" marker-end="url(#bf-arr)"/><path class="line" d="M610 71 L636 71" marker-end="url(#bf-arr)"/>
+<path class="dash" d="M702 108 L702 150 L377 150 L377 108" marker-end="url(#bf-arr)"/><text x="540" y="168" text-anchor="middle" class="small">成功後本機寫入 REMOTE_SUCCESS，才允許清理舊備份</text>
+<text x="14" y="212" font-size="14" font-weight="700">週六 09:00　weekly（只存本機，不外送）</text>
+<rect class="box2" x="14" y="224" width="200" height="74" rx="10"/><text x="114" y="250" text-anchor="middle" font-size="13" font-weight="700">最近 72 小時內合格的 daily</text><text x="114" y="270" text-anchor="middle" class="small">不新增週六 Gitea 停機</text><text x="114" y="286" text-anchor="middle" class="small">先驗證其校驗值</text>
+<rect class="box2" x="244" y="224" width="200" height="74" rx="10"/><text x="344" y="250" text-anchor="middle" font-size="13" font-weight="700">系統檔案</text><text x="344" y="270" text-anchor="middle" class="small">/etc、/home、docker volumes</text><text x="344" y="286" text-anchor="middle" class="small">（排除 home/Gitea、.cache）</text>
+<rect class="warnbox" x="474" y="224" width="294" height="74" rx="10"/><text x="621" y="250" text-anchor="middle" font-size="13" font-weight="700">本機 weekly/（保留 2 份）</text><text x="621" y="270" text-anchor="middle" class="small">Gitea 時間點＝引用的 daily，不是週六當刻</text><text x="621" y="286" text-anchor="middle" class="small">⚠ 尚未外送備機</text>
+<path class="line" d="M214 261 L244 261" marker-end="url(#bf-arr)"/><path class="line" d="M444 261 L474 261" marker-end="url(#bf-arr)"/>
+</svg><figcaption></figcaption></figure>
+
+<div class="admonition tip">
+<p class="admonition-title">白話說明</p>
+<p>備份有三道關卡，成功的意義不同：<strong>本機成功</strong>（<code>SUCCESS</code>，檔案做好了）→ <strong>異機成功</strong>（<code>REMOTE_SUCCESS</code>，備機收到而且校驗通過）→ <strong>還原成功</strong>（真的用它把系統重建起來）。目前只做到前兩關，而且第二關是 10/5 才第一次看到成果，<strong>第三關從來沒做過</strong>。</p>
+</div>
+<h2 id="現行備份分層">現行備份分層</h2>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
 <tr>
 <th>層級</th>
 <th>內容</th>
 <th>已知限制</th>
+<th>資料日期</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>daily 本機</td>
-<td>一致性 Gitea 冷備份</td>
-<td>與系統位於同一顆 SSD</td>
+<td>一致性 Gitea 冷備份（<code>gitea-cold.tar.gz</code> 等）</td>
+<td>與系統同一顆 SSD</td>
+<td>2026-10-05</td>
 </tr>
 <tr>
 <td>daily 備機</td>
 <td>經 SHA-256 核對的封存檔</td>
-<td>10/5 修正已部署，正式傳輸待驗收</td>
+<td>10/5 備機已見完整目錄；日誌與備機校驗待核對；<strong>9/22–10/2 曾因 SSH 失敗未外送</strong></td>
+<td>2026-10-06</td>
 </tr>
 <tr>
 <td>weekly 本機</td>
 <td>系統檔案＋最近 72 小時內合格冷備份</td>
-<td>不新增週六停機，也不是週六當刻的 Gitea 資料</td>
+<td>不新增週六停機；Gitea 時間點是引用的 daily，不是週六當刻；<strong>不外送</strong></td>
+<td>2026-10-03</td>
 </tr>
 <tr>
 <td>隔離還原</td>
-<td>還原 Gitea、PostgreSQL 及資料</td>
-<td>尚未演練，RTO 尚未實測</td>
+<td>還原 Gitea、PostgreSQL 與資料</td>
+<td><strong>尚未演練，RTO 未實測</strong></td>
+<td>—</td>
 </tr>
 </tbody>
 </table></div>
-<h2 id="_2">保留與缺口</h2>
-<p>本機保留最近 7 組已完成異機校驗的 daily 與最近 2 組成功 weekly。未傳成功與 partial 不自動刪除，須追蹤容量。備機尚無自動保留政策；目前不會歷史補傳，也不會把 weekly 傳至備機。</p>
-<p>週備份尚缺正式維運程式及 root crontab 的專用復原設定包。請保留變更報告及安裝套件，不宣稱 weekly 是完整整機映像。</p>
-<h2 id="_3">還原驗收程序</h2>
-<ol>
-<li>在隔離環境準備與備份相容的 PostgreSQL／Gitea 版本，避免連到正式使用者入口。</li>
-<li>核對封存檔與 SHA256SUMS，記錄來源工作 ID 及資料截止時間。</li>
-<li>依映像與容器 UID/GID 還原設定及資料，先啟動 DB，再啟動 Gitea。</li>
-<li>驗證登入、Git clone／push、LFS、附件、Issue／PR 與權限。</li>
-<li>記錄實際耗時與資料差距，再決定 RTO／RPO 與切換窗口。</li>
-</ol>
-<p>本頁不提供直接覆蓋正式資料的解壓指令。正式切換須確認唯一寫入端、DNS／入口與回復方案。</p>
-<h2 id="rpo-rto">RPO 與 RTO</h2>
-<p>RPO 是可接受遺失多久的資料；RTO 是可接受服務中斷多久。平日才做 daily，週末只沿用既有冷備份，不能保證任意時點 RPO 24 小時。主機關機、失敗或錯過排程時，差距可能更長。</p>
-<h2 id="_4">如何找到備份</h2>
-<p>位置、log 與成功標記請查 <a href="logs.html">Log 與產出物</a>。先完成最新異機副本驗收，再清查歷史積壓，避免為騰出空間刪掉唯一副本。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#_1">現行備份分層</a><a href="#_2">保留與缺口</a><a href="#_3">還原驗收程序</a><a href="#rpo-rto">RPO 與 RTO</a><a href="#_4">如何找到備份</a></aside></div>
-<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>狀態依盤點紀錄呈現，非即時監控</span></footer></main></div>
+<p>weekly 目前缺少正式維運程式與 root crontab 的專用復原設定包；請保留變更報告與安裝套件。不要宣稱 weekly 是完整整機映像。</p>
+<h2 id="3-2-1-原則的落差">3-2-1 原則的落差</h2>
+<p>3-2-1 的意思是：<strong>3 份</strong>資料、<strong>2 種</strong>媒介、<strong>1 份</strong>在異地。</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>要求</th>
+<th>現況</th>
+<th>落差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3 份資料</td>
+<td>正式資料＋本機 daily＋備機 daily</td>
+<td>本機 daily 與正式資料在同一顆 SSD，實質只有 2 份獨立副本</td>
+</tr>
+<tr>
+<td>2 種媒介</td>
+<td>備機也是磁碟</td>
+<td>沒有離線／不同類型媒介</td>
+</tr>
+<tr>
+<td>1 份異地</td>
+<td>備機在同一個二層網段（<code>192.168.1.0/24</code>），應與主機同處一地</td>
+<td><strong>沒有異地副本</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>這不是在責怪現況，而是讓 PM 知道：一次機房事故（火災、淹水、斷電、勒索）可能同時毀掉主機與備機。</p>
+<h2 id="備機的角色現在是備份接收點">備機的角色：現在是「備份接收點」</h2>
+<div class="admonition warning">
+<p class="admonition-title">備機不是熱備援</p>
+<p>備機目前只<strong>接收備份檔</strong>，沒有 Gitea、沒有資料庫在跑。主機壞了，使用者<strong>不會</strong>自動改連備機；需要先在備機還原，再切換入口。</p>
+</div>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>選項</th>
+<th>做法</th>
+<th>優點</th>
+<th>缺點／成本</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A 冷備援</strong>（現況＋補演練）</td>
+<td>備機只收備份；出事時照 <a href="restore.html">還原與演練</a> 的 S3 還原</td>
+<td>零額外成本、最簡單</td>
+<td>RTO 長（要重建）；入口切換需人工</td>
+</tr>
+<tr>
+<td><strong>B 暖備援</strong>（建議下一步）</td>
+<td>備機定期（例如每月）還原一次並驗證；平時關閉服務</td>
+<td>切換步驟熟練、能持續驗證備份可用</td>
+<td>需要備機容量與固定的演練時間</td>
+</tr>
+<tr>
+<td>C 熱備援</td>
+<td>備機持續同步並隨時接手</td>
+<td>RTO 最短</td>
+<td>Gitea 單機架構下複雜度高、容易腦裂（兩邊都在寫），<strong>不建議</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>建議</strong>：先落實 A（把還原演練做起來），穩定後升級為 B。切換決策與核准人：由 PM 與 Linux 管理員共同核准，見下圖。</p>
+<figure class="diagram"><svg viewBox="0 0 780 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="fo-t">
+<title id="fo-t">圖：服務異常時的決策樹——先修主機，修不回來才在備機或新機還原</title>
+<defs><marker id="fo-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5c6c78"/></marker></defs>
+<rect class="badbox" x="14" y="14" width="170" height="52" rx="10"/><text x="99" y="38" text-anchor="middle" font-size="13" font-weight="700">Gitea 無法使用</text><text x="99" y="56" text-anchor="middle" class="small">先排除正常的停機時段</text>
+<rect class="box2" x="230" y="14" width="200" height="52" rx="10"/><text x="330" y="36" text-anchor="middle" font-size="13" font-weight="700">主機還活著嗎？</text><text x="330" y="54" text-anchor="middle" class="small">能 SSH、容器存在、磁碟可讀</text>
+<rect class="okbox" x="476" y="14" width="290" height="52" rx="10"/><text x="621" y="36" text-anchor="middle" font-size="13" font-weight="700">是：依事件手冊 R1 排除</text><text x="621" y="54" text-anchor="middle" class="small">重啟容器前先保存日誌與資料目錄快照</text>
+<rect class="box2" x="230" y="104" width="200" height="52" rx="10"/><text x="330" y="126" text-anchor="middle" font-size="13" font-weight="700">資料還讀得到嗎？</text><text x="330" y="144" text-anchor="middle" class="small">/home/Gitea 與 postgres 可讀取</text>
+<rect class="warnbox" x="476" y="104" width="290" height="52" rx="10"/><text x="621" y="126" text-anchor="middle" font-size="13" font-weight="700">可讀：先複製一份再修（S2／S4）</text><text x="621" y="144" text-anchor="middle" class="small">不要在唯一一份資料上直接試</text>
+<rect class="box2" x="230" y="194" width="200" height="52" rx="10"/><text x="330" y="216" text-anchor="middle" font-size="13" font-weight="700">能在容忍時間內修好？</text><text x="330" y="234" text-anchor="middle" class="small">由 PM 與管理員共同決定</text>
+<rect class="okbox" x="476" y="194" width="290" height="52" rx="10"/><text x="621" y="216" text-anchor="middle" font-size="13" font-weight="700">能：修復主機，驗收後恢復</text><text x="621" y="234" text-anchor="middle" class="small">保留故障紀錄與時間線</text>
+<rect class="warnbox" x="230" y="284" width="536" height="60" rx="10"/><text x="498" y="308" text-anchor="middle" font-size="13" font-weight="700">不能：在備機或新機還原最近一份已校驗備份（S3）</text><text x="498" y="328" text-anchor="middle" class="small">確認唯一寫入端 → 還原 → 驗收 → 切換入口（IP／DNS／ROOT_URL）→ 通知使用者</text>
+<path class="line" d="M184 40 L230 40" marker-end="url(#fo-arr)"/><path class="line" d="M430 40 L476 40" marker-end="url(#fo-arr)"/><text x="453" y="32" text-anchor="middle" class="small">是</text>
+<path class="line" d="M330 66 L330 104" marker-end="url(#fo-arr)"/><text x="344" y="90" class="small">否</text>
+<path class="line" d="M430 130 L476 130" marker-end="url(#fo-arr)"/><text x="453" y="122" text-anchor="middle" class="small">可</text>
+<path class="line" d="M330 156 L330 194" marker-end="url(#fo-arr)"/><text x="344" y="180" class="small">不可讀</text>
+<path class="line" d="M430 220 L476 220" marker-end="url(#fo-arr)"/><text x="453" y="212" text-anchor="middle" class="small">能</text>
+<path class="line" d="M330 246 L330 284" marker-end="url(#fo-arr)"/><text x="344" y="270" class="small">不能</text>
+</svg><figcaption></figcaption></figure>
+
+<div class="admonition note">
+<p class="admonition-title">切換入口是目前最大的暗坑</p>
+<p>Gitea 的 <code>ROOT_URL</code> 與使用者的 Git remote 都是 <strong>IP</strong>（<code>http://10.253.114.160:3000/</code>）。在備機還原後，使用者要改 remote，或備機必須接手同一個 IP。建議在真正需要切換之前，先導入穩定的<strong>網域名稱</strong>，否則切換時所有使用者與 Webhook 都要手動改網址。</p>
+</div>
+<h2 id="rpo-與-rto">RPO 與 RTO</h2>
+<ul>
+<li><strong>RPO</strong>（可接受遺失多久的資料）：目前平日一天一份，<strong>最壞約 24 小時</strong>；週五 20:30 之後到週一 20:30 沒有新的 daily，週末最壞可達約 72 小時。9/22–10/2 因外送失敗，備機端的有效 RPO 更長。</li>
+<li><strong>RTO</strong>（可接受中斷多久）：<strong>尚未實測</strong>。沒有演練，任何 RTO 數字都只是猜測。</li>
+<li>討論起點（<strong>僅供 PM 參考，不是承諾</strong>）：RPO 24 小時、RTO 4 小時。實際目標由 PM 與使用者代表決定，再回頭調整排程頻率與備援選項。</li>
+</ul>
+<h2 id="保留與容量">保留與容量</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>現行行為</th>
+<th>建議</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>本機 daily</td>
+<td>保留最近 7 份<strong>已外送校驗</strong>者；失敗時不清理</td>
+<td>外送失敗仍要有上限，並在日誌警示「X 份未外送」</td>
+</tr>
+<tr>
+<td>本機 weekly</td>
+<td>保留最近 2 份成功者</td>
+<td>每份都含完整冷備份與系統檔案，需另外量測容量</td>
+</tr>
+<tr>
+<td>備機</td>
+<td><strong>沒有任何保留或清理策略</strong>，只寫入</td>
+<td>建議 7 日＋4 週；清理限於受管理目錄、日期格式相符、且確認更新的備份已通過校驗後才執行，先以「只列出」模式跑一週</td>
+</tr>
+<tr>
+<td>歷史補傳</td>
+<td>不會自動補傳 9/22–10/2 的未外送備份</td>
+<td>評估是否補傳最近一份已校驗的備份</td>
+</tr>
+</tbody>
+</table></div>
+<div class="admonition warning">
+<p class="admonition-title">外送失敗時本機備份會累積</p>
+<p>本機清理只會在 daily 全部成功後才執行，且只清理有 <code>REMOTE_SUCCESS</code> 的備份。外送連續失敗時，本機 <code>daily/</code> 會一直增加；過去沒有 <code>REMOTE_SUCCESS</code> 的舊備份，即使日後外送恢復，也不會被自動清理，需管理員確認後處理。</p>
+</div>
+<p>容量估算（<strong>估算，非量測</strong>，資料日期 2026-10-06）：</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>數值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>備機可用空間</td>
+<td>約 199 GB</td>
+</tr>
+<tr>
+<td>單日備份大小（估）</td>
+<td>約 3 GiB</td>
+</tr>
+<tr>
+<td>沒有清理時可存放</td>
+<td>約 60 多天（199 ÷ 3）</td>
+</tr>
+<tr>
+<td>套用「7 日＋4 週」後的穩定佔用（估）</td>
+<td>約 33 GiB（11 份 × 3 GiB）</td>
+</tr>
+</tbody>
+</table></div>
+<p>找出沒有 <code>REMOTE_SUCCESS</code> 的本機備份（唯讀）：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo find /var/backups/gitea-maintenance/daily -mindepth 2 -maxdepth 2 -name SUCCESS -printf '%h\n'
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo du -sh /var/backups/gitea-maintenance/daily /var/backups/gitea-maintenance/weekly
+</code></pre>
+<h2 id="驗收清單">驗收清單</h2>
+<p><strong>每天（5 分鐘，維運）</strong></p>
+<ul>
+<li>☐ 同一次 daily 的日誌（午夜後讀 <code>daily.log.1</code>）依序有 <code>Services restored and health check passed</code>、<code>Remote checksum verified</code>、<code>SUCCESS daily</code>。</li>
+<li>☐ 備機 <code>gitea-backups/</code> 的最新資料夾<strong>沒有</strong> <code>.partial</code> 後綴。</li>
+<li>☐ <code>curl http://127.0.0.1:3000/api/healthz</code> 為 <code>status: pass</code>。</li>
+<li>☐ 沒有 <code>recovery-required.json</code>。</li>
+<li>☐ 本機備份容量沒有異常成長。</li>
+</ul>
+<p><strong>每週（維運）</strong>：在備機對最近一份抽驗校驗值（讀取量大，避開備份時段）：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">cd /home/coffee/gitea-backups/&lt;資料夾名稱&gt; &amp;&amp; sha256sum -c SHA256SUMS
+</code></pre>
+<p>另確認 <code>weekly.log</code> 有 <code>SUCCESS weekly</code>，以及上面「沒有 <code>REMOTE_SUCCESS</code>」清單沒有新增。</p>
+<p><strong>每季（Gitea 管理員＋Linux 管理員）</strong>：做一次 <a href="restore.html">還原與演練</a>，並更新本頁的 RTO 與狀態。</p>
+<h2 id="備份在哪裡怎麼讀">備份在哪裡、怎麼讀</h2>
+<p>位置、日誌與成功標記請查 <a href="logs.html">Log 與產出物</a>。處理失敗請看 <a href="runbook.html">事件處理手冊 R4、R5、R6</a>。先完成最新異機副本驗收，再清查歷史積壓，<strong>不要為了騰出空間刪掉唯一的副本</strong>。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#備份資料流">備份資料流</a><a href="#現行備份分層">現行備份分層</a><a href="#3-2-1-原則的落差">3-2-1 原則的落差</a><a href="#備機的角色現在是備份接收點">備機的角色：現在是「備份接收點」</a><a href="#rpo-與-rto">RPO 與 RTO</a><a href="#保留與容量">保留與容量</a><a href="#驗收清單">驗收清單</a><a href="#備份在哪裡怎麼讀">備份在哪裡、怎麼讀</a></aside></div>
+<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>各頁資料日期見頁首；非即時監控</span></footer></main></div>
 <button class="back-to-top" id="back-to-top" type="button" aria-label="回到頁首">↑</button>
 </body></html>

@@ -4,16 +4,17 @@
 <meta name="description" content="$lead"><title>$title · Gitea 維運知識庫</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23102c3c'/%3E%3Cpath d='m10 12 8 8-8 8m12 0h9' fill='none' stroke='%237ce4d4' stroke-width='3'/%3E%3C/svg%3E">
 <script>try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
-<link rel="stylesheet" href="styles.css"><script src="site.js" defer></script></head>
+<link rel="stylesheet" href="styles.css"><script src="search-index.js" defer></script><script src="site.js" defer></script></head>
 <body><a class="skip" href="#main">跳至主要內容</a>
 <aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a>
-<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋頁面…" aria-label="搜尋導覽頁面" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的頁面</p></div>
-<p class="nav-label">操作與交接</p><nav class="nav" aria-label="知識庫導覽">$nav</nav><div class="side-bottom"><strong>票務中心系統組</strong>內部維運文件<br>基準 2026.10.05</div></aside>
-<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>$title</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">交接版 <strong>02</strong></div></header>
-<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 維護與交接</p><h1>$title</h1><p class="intro">$lead</p></div><div class="head-note">最後證據更新<strong>2026 年 10 月 5 日</strong>18:33 · Asia/Taipei</div></header>
-<div class="notice"><strong>文件快照</strong><span>已部署不等於已驗收。新版正式異機傳輸與隔離還原，仍待確認。</span></div>
+<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋全站內容…" aria-label="搜尋全站內容" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的內容</p><div class="search-results" id="search-results" hidden></div></div>
+<div class="nav-groups">$nav</div><div class="side-bottom"><strong>內部維運文件</strong>每頁標示資料日期與狀態<br>非即時監控</div></aside>
+<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 / $group /</span><b>$title</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">手冊 <strong>v3</strong></div></header>
+<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / $group</p><h1>$title</h1><p class="intro">$lead</p></div><div class="head-note">資料日期<strong>$evidence_date</strong><span class="chip $status_class">$status</span></div></header>
+$meta
+<div class="notice"><strong>文件快照</strong><span>內容為資料日期當天的盤點，非即時監控。「已部署」不等於「已驗收」，未演練的步驟會標示「待演練」。</span></div>
 $quick
 <div class="doc-layout"><article class="article">$body</article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2>$outline</aside></div>
-<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>狀態依盤點紀錄呈現，非即時監控</span></footer></main></div>
+<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>各頁資料日期見頁首；非即時監控</span></footer></main></div>
 <button class="back-to-top" id="back-to-top" type="button" aria-label="回到頁首">↑</button>
 </body></html>

@@ -25,20 +25,66 @@ if(themeBtn){
  });
 }
 
-// sidebar nav filter
+// sidebar search: page-name filter plus full-text results from window.SEARCH_INDEX
 const navFilter=document.querySelector('#nav-filter');
 const navEmpty=document.querySelector('#nav-empty');
+const resultsBox=document.querySelector('#search-results');
 if(navFilter&&sidebar){
  const links=[...sidebar.querySelectorAll('.nav a')];
+ const groups=[...sidebar.querySelectorAll('.nav-group')];
+ const esc=t=>t.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const escRe=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+ const tokensOf=q=>q.toLowerCase().split(/\s+/).filter(Boolean);
+ const mark=(text,tokens)=>{
+  let out=esc(text);
+  tokens.forEach(tok=>{out=out.replace(new RegExp('('+escRe(esc(tok))+')','ig'),'<mark>$1</mark>');});
+  return out;
+ };
+ const snippet=(text,tokens)=>{
+  const low=text.toLowerCase();
+  let at=-1;
+  tokens.forEach(tok=>{const i=low.indexOf(tok);if(i>=0&&(at<0||i<at))at=i;});
+  const start=Math.max(0,at-24);
+  return (start>0?'…':'')+text.slice(start,start+110)+(text.length>start+110?'…':'');
+ };
+ const search=q=>{
+  const tokens=tokensOf(q);
+  const hits=[];
+  (window.SEARCH_INDEX||[]).forEach(e=>{
+   const hay=(e.p+' '+e.h+' '+e.t).toLowerCase();
+   if(!tokens.every(t=>hay.includes(t)))return;
+   let score=0;
+   tokens.forEach(t=>{
+    if(e.h.toLowerCase().includes(t))score+=3;
+    if(e.p.toLowerCase().includes(t))score+=2;
+    score+=Math.min(3,hay.split(t).length-1);
+   });
+   hits.push({e,score});
+  });
+  return hits.sort((a,b)=>b.score-a.score).slice(0,8);
+ };
  navFilter.addEventListener('input',()=>{
-  const q=navFilter.value.trim().toLowerCase();
+  const q=navFilter.value.trim();
+  const ql=q.toLowerCase();
   let shown=0;
   links.forEach(link=>{
-   const match=link.textContent.toLowerCase().includes(q);
+   const match=link.textContent.toLowerCase().includes(ql);
    link.hidden=!match;
    if(match)shown++;
   });
-  if(navEmpty)navEmpty.hidden=shown!==0;
+  groups.forEach(g=>{g.hidden=!g.querySelector('.nav a:not([hidden])');});
+  let hits=[];
+  if(resultsBox){
+   if(q.length>=2&&window.SEARCH_INDEX)hits=search(q);
+   if(hits.length){
+    const tokens=tokensOf(q);
+    resultsBox.innerHTML=hits.map(({e})=>
+     '<a href="'+e.u+'"><span class="sr-t">'+mark(e.h||e.p,tokens)+'<span class="sr-g">'+esc(e.p)+'</span></span>'+
+     '<span class="sr-s">'+mark(snippet(e.t,tokens),tokens)+'</span></a>').join('');
+    resultsBox.hidden=false;
+   }else{resultsBox.hidden=true;resultsBox.innerHTML='';}
+  }
+  if(navEmpty)navEmpty.hidden=(shown+hits.length)!==0;
  });
 }
 

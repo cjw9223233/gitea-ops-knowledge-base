@@ -1,0 +1,16 @@
+<svg viewBox="0 0 780 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="al-t">
+<title id="al-t">圖：四層權限——網路白名單、Linux SSH 與 sudo、Docker、Gitea；每一層都要通過</title>
+<defs><marker id="al-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5c6c78"/></marker></defs>
+<rect class="box2" x="14" y="14" width="500" height="64" rx="10"/><text x="30" y="40" font-size="14" font-weight="700">① 網路白名單</text><text x="30" y="60" class="small">能不能接觸服務埠（3000／2222／22）｜誰管：網管、Linux 管理員</text>
+<rect class="box" x="14" y="92" width="500" height="64" rx="10"/><text x="30" y="118" font-size="14" font-weight="700">② Linux SSH 與 sudo</text><text x="30" y="138" class="small">能不能進主機、改設定、讀備份｜誰管：Linux 管理員（目前只有一個共用帳號 coffee）</text>
+<rect class="badbox" x="14" y="170" width="500" height="64" rx="10"/><text x="30" y="196" font-size="14" font-weight="700">③ Docker 群組　⚠ 等同 root</text><text x="30" y="216" class="small">能不能操作容器與掛載資料｜不給一般開發者；視同高權限維運</text>
+<rect class="okbox" x="14" y="248" width="500" height="64" rx="10"/><text x="30" y="274" font-size="14" font-weight="700">④ Gitea 組織／團隊／儲存庫</text><text x="30" y="294" class="small">能看、改哪些專案、Issue 與 PR｜誰管：Gitea 管理員、專案負責人</text>
+<rect class="box2" x="548" y="14" width="218" height="298" rx="12"/>
+<text x="657" y="44" text-anchor="middle" font-size="14" font-weight="700">誰需要哪一層？</text>
+<text x="566" y="76" class="small">開發者／查閱者</text><text x="566" y="96" font-size="13" font-weight="700">① ＋ ④</text>
+<text x="566" y="130" class="small">專案維護者</text><text x="566" y="150" font-size="13" font-weight="700">① ＋ ④（Admin）</text>
+<text x="566" y="184" class="small">Linux 維運（少數具名）</text><text x="566" y="204" font-size="13" font-weight="700">① ＋ ② ＋ ③</text>
+<text x="566" y="238" class="small">網管</text><text x="566" y="258" font-size="13" font-weight="700">① ＋（②視需要）</text>
+<text x="566" y="292" class="small">開發者不需要 ② ③</text>
+<path class="line" d="M514 46 L548 46" marker-end="url(#al-arr)"/>
+</svg>

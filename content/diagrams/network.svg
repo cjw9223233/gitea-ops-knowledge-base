@@ -1,0 +1,22 @@
+<svg viewBox="0 0 780 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="net-t">
+<title id="net-t">圖：網路拓樸——使用者、交換器、主機單一網卡雙 IP、備機與無法連線的 NTP 上游</title>
+<defs><marker id="net-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5c6c78"/></marker></defs>
+<rect class="box2" x="12" y="20" width="156" height="70" rx="10"/><text x="90" y="46" text-anchor="middle" font-size="14" font-weight="700">使用者／維運電腦</text><text x="90" y="66" text-anchor="middle" class="small">10.253.111.x／10.253.114.x</text>
+<rect class="warnbox" x="204" y="20" width="148" height="70" rx="10"/><text x="278" y="46" text-anchor="middle" font-size="14" font-weight="700">上游 ACL／白名單</text><text x="278" y="66" text-anchor="middle" class="small">第 1 層（網管）</text>
+<rect class="box2" x="204" y="150" width="148" height="70" rx="10"/><text x="278" y="176" text-anchor="middle" font-size="14" font-weight="700">交換器 GS2210</text><text x="278" y="196" text-anchor="middle" class="small">主機接在 port 1（VLAN 待確認）</text>
+<rect class="box" x="392" y="110" width="236" height="250" rx="14"/><text x="510" y="134" text-anchor="middle" font-size="14" font-weight="700">正式主機 eno1（同一張網卡）</text>
+<rect class="box2" x="410" y="148" width="200" height="40" rx="8"/><text x="510" y="166" text-anchor="middle" font-size="13" font-weight="700">10.253.114.160/24</text><text x="510" y="181" text-anchor="middle" class="small">服務與維運入口</text>
+<rect class="box2" x="410" y="196" width="200" height="40" rx="8"/><text x="510" y="214" text-anchor="middle" font-size="13" font-weight="700">192.168.1.2/24</text><text x="510" y="229" text-anchor="middle" class="small">通往備機的第二個位址</text>
+<rect class="warnbox" x="410" y="246" width="200" height="40" rx="8"/><text x="510" y="264" text-anchor="middle" font-size="13" font-weight="700">iptables DOCKER-USER</text><text x="510" y="279" text-anchor="middle" class="small">第 2 層（主機）</text>
+<rect class="okbox" x="410" y="296" width="200" height="50" rx="8"/><text x="510" y="314" text-anchor="middle" font-size="13" font-weight="700">Docker 網路 172.18.0.0/16</text><text x="510" y="331" text-anchor="middle" class="small">Gitea .2 · PostgreSQL .3（第 3 層）</text>
+<rect class="okbox" x="664" y="196" width="104" height="60" rx="10"/><text x="716" y="222" text-anchor="middle" font-size="14" font-weight="700">備機</text><text x="716" y="242" text-anchor="middle" class="small">192.168.1.3</text>
+<rect class="badbox" x="664" y="20" width="104" height="110" rx="10"/><text x="716" y="44" text-anchor="middle" font-size="13" font-weight="700">NTP 上游</text><text x="716" y="64" text-anchor="middle" class="small">10.36.1.1</text><text x="716" y="80" text-anchor="middle" class="small">公用來源 ×5</text><text x="716" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="#c0392b">全部 Reach 0</text><text x="716" y="118" text-anchor="middle" class="small">UDP 123 不通</text>
+<rect class="box2" x="12" y="150" width="156" height="70" rx="10"/><text x="90" y="176" text-anchor="middle" font-size="14" font-weight="700">預設閘道／DNS</text><text x="90" y="196" text-anchor="middle" class="small">10.253.114.254</text><text x="90" y="212" text-anchor="middle" class="small">DNS 10.36.1.1、10.254.1.1</text>
+<path class="line" d="M168 55 L204 55" marker-end="url(#net-arr)"/><path class="line" d="M278 90 L278 150" marker-end="url(#net-arr)"/><path class="line" d="M352 185 L392 185" marker-end="url(#net-arr)"/>
+<path class="line" d="M168 185 L204 185" marker-end="url(#net-arr)"/>
+<path class="line" d="M610 226 L664 226" marker-end="url(#net-arr)"/><text x="637" y="216" text-anchor="middle" class="small">SSH 22</text>
+<path class="dash" d="M628 150 L690 130" marker-end="url(#net-arr)"/><text x="660" y="160" class="small">校時失敗</text>
+<text x="14" y="300" class="small">三層防線：① 上游 ACL ② 主機 iptables ③ Gitea 帳號與專案權限</text>
+<text x="14" y="322" class="small">192.168.1.2 與主 IP 同一張網卡，並非兩條獨立網路備援</text>
+<text x="14" y="344" class="small">備機傳輸不經預設閘道（同一個二層網段）</text>
+</svg>

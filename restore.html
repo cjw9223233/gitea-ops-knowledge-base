@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="分情境還原流程與演練計畫；未演練的步驟一律標示「待演練」。"><title>還原與演練 · Gitea 維運知識庫</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23102c3c'/%3E%3Cpath d='m10 12 8 8-8 8m12 0h9' fill='none' stroke='%237ce4d4' stroke-width='3'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="stylesheet" href="styles.css"><script src="search-index.js" defer></script><script src="site.js" defer></script></head>
+<body><a class="skip" href="#main">跳至主要內容</a>
+<aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a>
+<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋全站內容…" aria-label="搜尋全站內容" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的內容</p><div class="search-results" id="search-results" hidden></div></div>
+<div class="nav-groups"><div class="nav-group"><p class="nav-label">入門</p><nav class="nav" aria-label="入門"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a><a href="glossary.html"><span>03</span>名詞與圖解</a></nav></div><div class="nav-group"><p class="nav-label">架構</p><nav class="nav" aria-label="架構"><a href="system.html"><span>04</span>系統與服務</a><a href="network.html"><span>05</span>網路與連線</a></nav></div><div class="nav-group"><p class="nav-label">資料保護</p><nav class="nav" aria-label="資料保護"><a href="backup.html"><span>06</span>備份與備援</a><a href="restore.html" aria-current="page"><span>07</span>還原與演練</a></nav></div><div class="nav-group"><p class="nav-label">營運</p><nav class="nav" aria-label="營運"><a href="daily.html"><span>08</span>日常巡檢</a><a href="logs.html"><span>09</span>Log 與產出物</a><a href="schedule.html"><span>10</span>排程管理</a><a href="hardware.html"><span>11</span>硬碟與開機排查</a><a href="runbook.html"><span>12</span>事件處理手冊</a></nav></div><div class="nav-group"><p class="nav-label">治理</p><nav class="nav" aria-label="治理"><a href="access.html"><span>13</span>權限與帳號</a><a href="changes.html"><span>14</span>變更與驗收</a><a href="risks.html"><span>15</span>風險與待辦</a></nav></div></div><div class="side-bottom"><strong>內部維運文件</strong>每頁標示資料日期與狀態<br>非即時監控</div></aside>
+<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 / 資料保護 /</span><b>還原與演練</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">手冊 <strong>v3</strong></div></header>
+<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 資料保護</p><h1>還原與演練</h1><p class="intro">分情境還原流程與演練計畫；未演練的步驟一律標示「待演練」。</p></div><div class="head-note">資料日期<strong>2026-10-06</strong><span class="chip pending">待驗證</span></div></header>
+<dl class="meta"><div><dt>這頁解決什麼</dt><dd>出事時知道怎麼在隔離環境還原與驗收，並規劃每季演練。</dd></div><div><dt>前置知識</dt><dd>Docker／Compose 基本操作、備份分層（見備份與備援）</dd></div><div><dt>風險等級</dt><dd><span class="risk r-stop">含中斷服務</span></dd></div><div><dt>適合讀者</dt><dd><span class="aud">維運</span><span class="aud">PM</span></dd></div></dl>
+<div class="notice"><strong>文件快照</strong><span>內容為資料日期當天的盤點，非即時監控。「已部署」不等於「已驗收」，未演練的步驟會標示「待演練」。</span></div>
+
+<div class="doc-layout"><article class="article"><div class="admonition warning">
+<p class="admonition-title">全部步驟目前都是「待演練」</p>
+<p>本頁是依備份內容（<code>gitea-cold.tar.gz</code> 內含 <code>docker-compose.yml</code>、<code>config</code>、<code>data</code>、<code>postgres</code>、存取規則腳本與文件）與 Docker 慣例整理的<strong>還原流程草案</strong>，<strong>從未在這個環境實際跑過</strong>。第一次演練完成前，不得宣稱 RTO，也不要把任何步驟當成「已驗證」。演練後請把對應步驟改成已驗證並補上實際耗時。</p>
+</div>
+<h2 id="通用原則">通用原則</h2>
+<ol>
+<li><strong>預設在隔離環境還原</strong>：不同的目錄、不同的 Docker Compose 專案名、不同的對外埠（例如 3300／2322），<strong>不覆蓋正式資料</strong>。</li>
+<li>還原前先核對校驗值，並記錄來源備份的工作 ID 與資料截止時間。</li>
+<li>還原使用 root 並保留數字 UID／GID（<code>--numeric-owner</code>）：Gitea 容器是 1000:1000、PostgreSQL 是 999。<strong>不要</strong>事後對整棵目錄 <code>chown -R</code>。</li>
+<li>先啟動資料庫、確認可接受連線，再啟動 Gitea。</li>
+<li>隔離還原的 Gitea 內部連結仍可能指向舊的 <code>ROOT_URL</code>；驗收時以功能為主。</li>
+<li>每個情境都要先寫下<strong>前置條件、決策點、驗收、回退</strong>，再動手。</li>
+</ol>
+<h2 id="s1-誤刪儲存庫或分支">S1 誤刪儲存庫或分支</h2>
+<p><strong>前置</strong>：知道要找回的專案名稱、大約的刪除時間，以及使用者要的是「整個儲存庫」還是「某分支或某次提交」。</p>
+<p><strong>決策</strong>：</p>
+<ul>
+<li>只是分支被刪：先在 Gitea 介面確認是否可以還原已刪分支（部分情況介面會提供還原），能還原就不需要動備份。</li>
+<li>整個儲存庫被刪或資料毀損：從最近一份已校驗備份，在<strong>隔離環境</strong>還原，取出該儲存庫再放回正式環境（不要用整份備份覆蓋）。</li>
+</ul>
+<p><strong>步驟（概要）</strong>：</p>
+<ol>
+<li>依 S3 的步驟 2–6 在隔離環境還原最近一份備份（不對外、不接正式使用者）。</li>
+<li>在隔離 Gitea 找到該儲存庫，確認內容與時間點正確。</li>
+<li>在隔離環境 <code>git clone</code>（或 <code>git bundle</code>）取出完整歷史。</li>
+<li>在正式 Gitea 以<strong>新名稱</strong>建立空的儲存庫，推送取出的內容；與使用者確認後再決定是否改回原名。</li>
+</ol>
+<p><strong>驗收</strong>：使用者確認分支、標籤、提交歷史與需要的檔案齊全；Issue／Pull Request 若在備份時間點之後新增，會遺失，需告知使用者。<strong>回退</strong>：新建的儲存庫可以刪除，正式其他資料不受影響；隔離環境按 S3 步驟 7 清除。</p>
+<p><strong>預估耗時</strong>：待演練。</p>
+<h2 id="s2-資料庫損毀或無法啟動">S2 資料庫損毀或無法啟動</h2>
+<p><strong>前置</strong>：<code>gitea-db-1</code> 無法啟動或 <code>healthz</code> 失敗，日誌顯示資料庫檔案損毀或不一致。先確認不是單純的磁碟滿（見 <a href="runbook.html">事件處理手冊 R6</a>）。</p>
+<p><strong>決策</strong>：</p>
+<ul>
+<li><strong>不要</strong>在唯一一份資料上直接嘗試修復。先停止服務（避免進一步寫入），再把 <code>/home/Gitea/postgres</code> 完整複製一份保存。</li>
+<li>損毀確認後，評估資料遺失窗口：最近一份備份到現在之間的資料會遺失（最壞約 24 小時）。</li>
+</ul>
+<p><strong>步驟（概要）</strong>：</p>
+<ol>
+<li>在隔離環境用最近備份還原並啟動（S3 步驟 2–6），確認資料庫與 Gitea 都能正常運作。</li>
+<li>與 PM 確認可接受的資料遺失，並安排維護時段與通知。</li>
+<li>在維護時段停止正式服務，保留損毀資料目錄當證據，換成已驗證的還原資料。</li>
+</ol>
+<p>停止正式服務與換資料屬於中斷服務操作：</p>
+<pre data-level="stop" data-label="中斷服務 · Linux bash"><code class="language-bash">cd /home/Gitea &amp;&amp; docker compose -p gitea -f docker-compose.yml stop
+</code></pre>
+<p><strong>驗收</strong>：資料庫啟動、<code>healthz</code> 為 pass、能登入、能 clone 與 push 測試分支、LFS 與附件可存取、Issue／Pull Request 數量與備份時間點相符。<strong>回退</strong>：保留的損毀資料目錄與原 Compose 設定可還原回原狀；任何一步驗收失敗就停止，恢復原目錄後再評估。</p>
+<p><strong>預估耗時</strong>：待演練。</p>
+<h2 id="s3-主機毀損在備機或新機還原">S3 主機毀損：在備機或新機還原</h2>
+<p><strong>前置</strong>：</p>
+<ul>
+<li>備機（或新機）有 Docker 與 Compose，磁碟空間至少為備份大小的 2 倍以上。</li>
+<li>能取得最近一份<strong>已校驗</strong>的備份（備機 <code>/home/coffee/gitea-backups/&lt;工作 ID&gt;/</code>）。</li>
+<li>確認<strong>唯一寫入端</strong>：舊主機若還活著，必須先停止，避免兩邊都在寫。</li>
+</ul>
+<p><strong>決策</strong>：這是切換決策，由 PM 與 Linux 管理員共同核准，見 <a href="backup.html">備份與備援</a> 的決策樹。Gitea 的 <code>ROOT_URL</code> 與使用者 remote 都是 IP，切換前先決定是讓新機接手同一個 IP，還是通知所有使用者改網址。</p>
+<p><strong>步驟</strong>（以下命令在還原的目標機器執行；<code>&lt;…&gt;</code> 要換成實際值）：</p>
+<ol>
+<li>核對備份完整性：</li>
+</ol>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">cd /home/coffee/gitea-backups/&lt;工作 ID&gt; &amp;&amp; sha256sum -c SHA256SUMS
+</code></pre>
+<ol start="2">
+<li>建立隔離目錄並解壓（用 root，保留權限、ACL 與數字 UID）：</li>
+</ol>
+<pre data-level="chg" data-label="變更 · Linux bash"><code class="language-bash">sudo mkdir -p /srv/gitea-restore &amp;&amp; sudo tar --acls --xattrs --numeric-owner -xzpf /home/coffee/gitea-backups/&lt;工作 ID&gt;/gitea-cold.tar.gz -C /srv/gitea-restore
+</code></pre>
+<ol start="3">
+<li>編輯 <code>/srv/gitea-restore/docker-compose.yml</code>：把對外埠改成 <code>3300:3000</code> 與 <code>2322:2222</code>（正式切換時才改回 3000／2222），資料庫維持內部。檢查語法：</li>
+</ol>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">cd /srv/gitea-restore &amp;&amp; docker compose -p gitea-restore -f docker-compose.yml config --quiet
+</code></pre>
+<ol start="4">
+<li>先啟動資料庫並確認可連線：</li>
+</ol>
+<pre data-level="chg" data-label="變更 · Linux bash"><code class="language-bash">cd /srv/gitea-restore &amp;&amp; docker compose -p gitea-restore -f docker-compose.yml up -d db
+</code></pre>
+<ol start="5">
+<li>資料庫就緒後再啟動 Gitea：</li>
+</ol>
+<pre data-level="chg" data-label="變更 · Linux bash"><code class="language-bash">cd /srv/gitea-restore &amp;&amp; docker compose -p gitea-restore -f docker-compose.yml up -d server
+</code></pre>
+<ol start="6">
+<li>驗證健康：</li>
+</ol>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">curl --max-time 10 -fsS http://127.0.0.1:3300/api/healthz
+</code></pre>
+<ol start="7">
+<li>通過驗收後，才進行正式切換（改埠、IP 或 DNS）；若不切換，清除隔離環境：</li>
+</ol>
+<pre data-level="chg" data-label="變更 · Linux bash"><code class="language-bash">cd /srv/gitea-restore &amp;&amp; docker compose -p gitea-restore -f docker-compose.yml down
+</code></pre>
+<p><strong>驗收</strong>：<code>healthz</code> 為 pass；管理員與一般帳號可登入；對代表性專案 <code>git clone</code> 與 <code>push</code> 一個測試分支；LFS 檔案可下載、附件可開啟；Issue 與 Pull Request 數量與備份時間點的統計相符；組織與團隊權限正確（Read 的人不能推送）。</p>
+<p><strong>回退</strong>：步驟 7 的 <code>down</code> 只停止隔離專案，不影響其他資料；確認不再需要後再手動刪除 <code>/srv/gitea-restore</code>。正式切換時保留舊主機的資料不要覆蓋，直到新環境穩定運作並由 PM 核准。</p>
+<p><strong>預估耗時</strong>：待演練（首次演練請完整計時，並記錄每一步花費時間）。</p>
+<h2 id="s4-ssd-故障bios-找不到系統碟">S4 SSD 故障（BIOS 找不到系統碟）</h2>
+<p><strong>前置</strong>：先讀 <a href="hardware.html">硬碟與開機排查</a>。<strong>不要</strong>因為想測試而反覆強制重開機；每次冷開機都是一次風險。</p>
+<p><strong>決策</strong>：</p>
+<ul>
+<li>能開機：立即確認最近一份備機備份是否可用，並安排維護時段做完整備份與硬體檢查。</li>
+<li>無法開機、SSD 時有時無：先確認備機備份有一份已校驗的最近副本；若有，可以直接走 S3，不必冒險反覆嘗試原碟。</li>
+<li>需要救出原碟資料：以唯讀方式掛載（例如用 live USB 開機，<code>mount -o ro</code>），複製 <code>/home/Gitea</code>；不要在原碟上嘗試修復。</li>
+</ul>
+<p><strong>步驟（概要）</strong>：保全備份 → 完全關機斷電後檢查接頭、排線與電源 → 一次只更換一項 → 若換碟，依 S3 在新碟還原。</p>
+<p><strong>驗收</strong>：還原後依 S3 的驗收清單全部通過，並完成一次完整的 daily 備份與外送。<strong>回退</strong>：保留舊碟不要格式化，直到新環境穩定並經 PM 核准。</p>
+<p><strong>預估耗時</strong>：待演練。</p>
+<h2 id="演練計畫">演練計畫</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>建議</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>頻率</td>
+<td>每季一次；第一次盡快（建議在 NTP 校時修好後，避免時間跳動干擾）</td>
+</tr>
+<tr>
+<td>範圍</td>
+<td>最少做 S3（完整還原到隔離環境）；其餘情境依序補做</td>
+</tr>
+<tr>
+<td>角色</td>
+<td>Gitea 管理員（驗收功能）、Linux 管理員（操作）、PM（記錄決策、更新 RTO）</td>
+</tr>
+<tr>
+<td>時段</td>
+<td>非備份窗口（避開主機時間 20:25–22:05），並且不接觸正式服務</td>
+</tr>
+<tr>
+<td>成功標準</td>
+<td>驗收清單全部通過，且有完整計時與差異紀錄</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="演練紀錄表範本">演練紀錄表（範本）</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>演練日期與時區</td>
+<td></td>
+</tr>
+<tr>
+<td>情境（S1–S4）</td>
+<td></td>
+</tr>
+<tr>
+<td>來源備份工作 ID</td>
+<td></td>
+</tr>
+<tr>
+<td>資料截止時間（備份時間點）</td>
+<td></td>
+</tr>
+<tr>
+<td>開始／結束時間（主機時鐘與標準時間偏移）</td>
+<td></td>
+</tr>
+<tr>
+<td>各步驟耗時</td>
+<td></td>
+</tr>
+<tr>
+<td>驗收結果（登入、clone／push、LFS、附件、Issue／PR、權限）</td>
+<td></td>
+</tr>
+<tr>
+<td>與正式環境的差異</td>
+<td></td>
+</tr>
+<tr>
+<td>發現的問題與修正</td>
+<td></td>
+</tr>
+<tr>
+<td>實測 RTO</td>
+<td></td>
+</tr>
+<tr>
+<td>負責人與核准人</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>演練後，把本頁的「待演練」改為「已驗證（日期）」，更新 <a href="backup.html">備份與備援</a> 的 RTO，並在 <a href="risks.html">風險與待辦</a> 結案相關項目。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#通用原則">通用原則</a><a href="#s1-誤刪儲存庫或分支">S1 誤刪儲存庫或分支</a><a href="#s2-資料庫損毀或無法啟動">S2 資料庫損毀或無法啟動</a><a href="#s3-主機毀損在備機或新機還原">S3 主機毀損：在備機或新機還原</a><a href="#s4-ssd-故障bios-找不到系統碟">S4 SSD 故障（BIOS 找不到系統碟）</a><a href="#演練計畫">演練計畫</a><a href="#演練紀錄表範本">演練紀錄表（範本）</a></aside></div>
+<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>各頁資料日期見頁首；非即時監控</span></footer></main></div>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="回到頁首">↑</button>
+</body></html>

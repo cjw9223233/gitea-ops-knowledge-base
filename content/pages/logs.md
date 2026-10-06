@@ -11,58 +11,60 @@
 
 ## 讀取當前與輪替日誌
 
-```bash
+```bash-ro
 sudo tail -n 100 /var/log/gitea-maintenance/daily.log
 ```
 
-```bash
+```bash-ro
 sudo tail -n 100 /var/log/gitea-maintenance/weekly.log
 ```
 
-```bash
+```bash-ro
 sudo tail -n 100 /var/log/gitea-maintenance/shutdown.log
 ```
 
-```bash
+```bash-ro
 sudo ls -lh /var/log/gitea-maintenance/
 ```
 
-若當前檔案是空的，查看最近輪替檔；檔名依清單為準。
+若當前檔案是空的，查看最近輪替檔；檔名依清單為準。日誌在每天 00:00 輪替（`copytruncate`、`notifempty`），**午夜之後再讀 `daily.log` 幾乎都是空的**，前一天的內容在 `daily.log.1`。
 
-```bash
+```bash-ro
 sudo tail -n 100 /var/log/gitea-maintenance/daily.log.1
 ```
 
-```bash
+```bash-ro
 sudo zcat /var/log/gitea-maintenance/daily.log.2.gz
 ```
 
 ## 查本機備份與容量
 
-```bash
+```bash-ro
 sudo ls -lh /var/backups/gitea-maintenance/daily/
 ```
 
-```bash
+```bash-ro
 sudo ls -lh /var/backups/gitea-maintenance/weekly/
 ```
 
-```bash
+```bash-ro
 sudo du -sh /var/backups/gitea-maintenance/daily /var/backups/gitea-maintenance/weekly
 ```
 
-```bash
+```bash-ro
 sudo find /var/backups/gitea-maintenance -maxdepth 3 -type f -printf '%p  %s bytes
 '
 ```
 
 ## 查備機（coffee 執行，不加 sudo）
 
-```bash
+```bash-ro
 ssh -o BatchMode=yes -o StrictHostKeyChecking=yes coffee@192.168.1.3 'ls -lh /home/coffee/gitea-backups/'
 ```
 
 如果目錄不存在，可能尚未進入首次正式傳輸，請對照 daily.log；不等於 SSH 認證失敗。
+
+2026-10-05 的實例：備機 `gitea-backups/` 出現 `20261005T123003Z-939940`，名稱沒有 `.partial` 後綴，表示備機端校驗通過後才發布。名稱的時間是**主機時鐘**的 UTC，加 8 小時為 20:30。
 
 ## 檔案與成功標記
 

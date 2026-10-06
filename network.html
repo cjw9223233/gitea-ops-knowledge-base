@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="位址、埠、防火牆、白名單申請與校時；連不上時先看這裡。"><title>網路與連線 · Gitea 維運知識庫</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23102c3c'/%3E%3Cpath d='m10 12 8 8-8 8m12 0h9' fill='none' stroke='%237ce4d4' stroke-width='3'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="stylesheet" href="styles.css"><script src="search-index.js" defer></script><script src="site.js" defer></script></head>
+<body><a class="skip" href="#main">跳至主要內容</a>
+<aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a>
+<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋全站內容…" aria-label="搜尋全站內容" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的內容</p><div class="search-results" id="search-results" hidden></div></div>
+<div class="nav-groups"><div class="nav-group"><p class="nav-label">入門</p><nav class="nav" aria-label="入門"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a><a href="glossary.html"><span>03</span>名詞與圖解</a></nav></div><div class="nav-group"><p class="nav-label">架構</p><nav class="nav" aria-label="架構"><a href="system.html"><span>04</span>系統與服務</a><a href="network.html" aria-current="page"><span>05</span>網路與連線</a></nav></div><div class="nav-group"><p class="nav-label">資料保護</p><nav class="nav" aria-label="資料保護"><a href="backup.html"><span>06</span>備份與備援</a><a href="restore.html"><span>07</span>還原與演練</a></nav></div><div class="nav-group"><p class="nav-label">營運</p><nav class="nav" aria-label="營運"><a href="daily.html"><span>08</span>日常巡檢</a><a href="logs.html"><span>09</span>Log 與產出物</a><a href="schedule.html"><span>10</span>排程管理</a><a href="hardware.html"><span>11</span>硬碟與開機排查</a><a href="runbook.html"><span>12</span>事件處理手冊</a></nav></div><div class="nav-group"><p class="nav-label">治理</p><nav class="nav" aria-label="治理"><a href="access.html"><span>13</span>權限與帳號</a><a href="changes.html"><span>14</span>變更與驗收</a><a href="risks.html"><span>15</span>風險與待辦</a></nav></div></div><div class="side-bottom"><strong>內部維運文件</strong>每頁標示資料日期與狀態<br>非即時監控</div></aside>
+<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 / 架構 /</span><b>網路與連線</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">手冊 <strong>v3</strong></div></header>
+<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 架構</p><h1>網路與連線</h1><p class="intro">位址、埠、防火牆、白名單申請與校時；連不上時先看這裡。</p></div><div class="head-note">資料日期<strong>2026-10-06</strong><span class="chip snap">快照</span></div></header>
+<dl class="meta"><div><dt>這頁解決什麼</dt><dd>查位址與埠、申請連線、修校時，並在連不上時排障。</dd></div><div><dt>前置知識</dt><dd>IP／埠基本概念（見名詞與圖解）</dd></div><div><dt>風險等級</dt><dd><span class="risk r-stop">含中斷服務</span></dd></div><div><dt>適合讀者</dt><dd><span class="aud">網管</span><span class="aud">維運</span><span class="aud">開發者</span><span class="aud">新手</span></dd></div></dl>
+<div class="notice"><strong>文件快照</strong><span>內容為資料日期當天的盤點，非即時監控。「已部署」不等於「已驗收」，未演練的步驟會標示「待演練」。</span></div>
+
+<div class="doc-layout"><article class="article"><h2 id="先看這張圖">先看這張圖</h2>
+<figure class="diagram"><svg viewBox="0 0 780 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="net-t">
+<title id="net-t">圖：網路拓樸——使用者、交換器、主機單一網卡雙 IP、備機與無法連線的 NTP 上游</title>
+<defs><marker id="net-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5c6c78"/></marker></defs>
+<rect class="box2" x="12" y="20" width="156" height="70" rx="10"/><text x="90" y="46" text-anchor="middle" font-size="14" font-weight="700">使用者／維運電腦</text><text x="90" y="66" text-anchor="middle" class="small">10.253.111.x／10.253.114.x</text>
+<rect class="warnbox" x="204" y="20" width="148" height="70" rx="10"/><text x="278" y="46" text-anchor="middle" font-size="14" font-weight="700">上游 ACL／白名單</text><text x="278" y="66" text-anchor="middle" class="small">第 1 層（網管）</text>
+<rect class="box2" x="204" y="150" width="148" height="70" rx="10"/><text x="278" y="176" text-anchor="middle" font-size="14" font-weight="700">交換器 GS2210</text><text x="278" y="196" text-anchor="middle" class="small">主機接在 port 1（VLAN 待確認）</text>
+<rect class="box" x="392" y="110" width="236" height="250" rx="14"/><text x="510" y="134" text-anchor="middle" font-size="14" font-weight="700">正式主機 eno1（同一張網卡）</text>
+<rect class="box2" x="410" y="148" width="200" height="40" rx="8"/><text x="510" y="166" text-anchor="middle" font-size="13" font-weight="700">10.253.114.160/24</text><text x="510" y="181" text-anchor="middle" class="small">服務與維運入口</text>
+<rect class="box2" x="410" y="196" width="200" height="40" rx="8"/><text x="510" y="214" text-anchor="middle" font-size="13" font-weight="700">192.168.1.2/24</text><text x="510" y="229" text-anchor="middle" class="small">通往備機的第二個位址</text>
+<rect class="warnbox" x="410" y="246" width="200" height="40" rx="8"/><text x="510" y="264" text-anchor="middle" font-size="13" font-weight="700">iptables DOCKER-USER</text><text x="510" y="279" text-anchor="middle" class="small">第 2 層（主機）</text>
+<rect class="okbox" x="410" y="296" width="200" height="50" rx="8"/><text x="510" y="314" text-anchor="middle" font-size="13" font-weight="700">Docker 網路 172.18.0.0/16</text><text x="510" y="331" text-anchor="middle" class="small">Gitea .2 · PostgreSQL .3（第 3 層）</text>
+<rect class="okbox" x="664" y="196" width="104" height="60" rx="10"/><text x="716" y="222" text-anchor="middle" font-size="14" font-weight="700">備機</text><text x="716" y="242" text-anchor="middle" class="small">192.168.1.3</text>
+<rect class="badbox" x="664" y="20" width="104" height="110" rx="10"/><text x="716" y="44" text-anchor="middle" font-size="13" font-weight="700">NTP 上游</text><text x="716" y="64" text-anchor="middle" class="small">10.36.1.1</text><text x="716" y="80" text-anchor="middle" class="small">公用來源 ×5</text><text x="716" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="#c0392b">全部 Reach 0</text><text x="716" y="118" text-anchor="middle" class="small">UDP 123 不通</text>
+<rect class="box2" x="12" y="150" width="156" height="70" rx="10"/><text x="90" y="176" text-anchor="middle" font-size="14" font-weight="700">預設閘道／DNS</text><text x="90" y="196" text-anchor="middle" class="small">10.253.114.254</text><text x="90" y="212" text-anchor="middle" class="small">DNS 10.36.1.1、10.254.1.1</text>
+<path class="line" d="M168 55 L204 55" marker-end="url(#net-arr)"/><path class="line" d="M278 90 L278 150" marker-end="url(#net-arr)"/><path class="line" d="M352 185 L392 185" marker-end="url(#net-arr)"/>
+<path class="line" d="M168 185 L204 185" marker-end="url(#net-arr)"/>
+<path class="line" d="M610 226 L664 226" marker-end="url(#net-arr)"/><text x="637" y="216" text-anchor="middle" class="small">SSH 22</text>
+<path class="dash" d="M628 150 L690 130" marker-end="url(#net-arr)"/><text x="660" y="160" class="small">校時失敗</text>
+<text x="14" y="300" class="small">三層防線：① 上游 ACL ② 主機 iptables ③ Gitea 帳號與專案權限</text>
+<text x="14" y="322" class="small">192.168.1.2 與主 IP 同一張網卡，並非兩條獨立網路備援</text>
+<text x="14" y="344" class="small">備機傳輸不經預設閘道（同一個二層網段）</text>
+</svg><figcaption></figcaption></figure>
+
+<div class="admonition tip">
+<p class="admonition-title">白話說明</p>
+<p>把主機想成一棟大樓：<strong>IP</strong> 是地址、<strong>埠（port）</strong> 是各個窗口、<strong>白名單</strong> 是警衛手上的名單。連得上要同時通過三關——網路上游放行、主機防火牆放行、Gitea 認得你的帳號。<strong>NTP</strong> 是校準大樓時鐘的服務；<strong>NAT</strong> 是讓內部機器共用一個出口。</p>
+</div>
+<h2 id="位址與連線資訊">位址與連線資訊</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>現況</th>
+<th>資料日期</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>使用中網卡</td>
+<td><code>eno1</code>；9/21 記錄 1 Gbps，10/5 補驗證記錄協商 <strong>100 Mb/s</strong> 全雙工，若預期千兆需查線材與交換器</td>
+<td>2026-10-05</td>
+</tr>
+<tr>
+<td>主要 IP</td>
+<td><code>10.253.114.160/24</code></td>
+<td>2026-10-05</td>
+</tr>
+<tr>
+<td>同網卡第二個 IP</td>
+<td><code>192.168.1.2/24</code>（通往備機）</td>
+<td>2026-10-05</td>
+</tr>
+<tr>
+<td>預設閘道</td>
+<td><code>10.253.114.254</code>，經 <code>eno1</code></td>
+<td>2026-10-05</td>
+</tr>
+<tr>
+<td>DNS</td>
+<td><code>10.36.1.1</code>、<code>10.254.1.1</code>；解析正常</td>
+<td>2026-10-06</td>
+</tr>
+<tr>
+<td>第二張網卡</td>
+<td><code>enp5s0</code>，沒有連線；Wake-on-LAN 仍為 <code>g</code></td>
+<td>2026-10-06</td>
+</tr>
+<tr>
+<td>IPv6</td>
+<td>只有 link-local，沒有 global 位址</td>
+<td>2026-09-21</td>
+</tr>
+<tr>
+<td>網路管理</td>
+<td>NetworkManager 與 systemd-networkd 皆 active；<code>eno1</code> 由 Netplan 產生的 networkd 設定管理；設定檔 <code>/etc/netplan/coffee_config.yaml</code> 為 root:root、600</td>
+<td>2026-09-21</td>
+</tr>
+<tr>
+<td>交換器線索</td>
+<td><code>networkctl</code> 顯示連到 <code>GS2210</code> port 1；實體位置與 VLAN 待確認</td>
+<td>2026-09-21</td>
+</tr>
+<tr>
+<td>IP forwarding</td>
+<td>IPv4 為 1、IPv6 為 0</td>
+<td>2026-09-21</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>192.168.1.2</code> 與主 IP 在<strong>同一張網卡</strong>，並不是兩條獨立網路的備援。容器 IP 重建後可能改變，Gitea 連資料庫要維持 <code>db:5432</code>，不要改成目前看到的 <code>172.18.0.3</code>。</p>
+<h2 id="對外監聽埠與建議">對外監聽埠與建議</h2>
+<p>資料日期 2026-10-06（<code>ss -lntu</code> 唯讀）。「監聽」不代表所有來源都能連入；反過來，UFW inactive 也不代表沒有防火牆。</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>埠</th>
+<th>用途</th>
+<th>綁定位址</th>
+<th>建議</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TCP 22</td>
+<td>Linux SSH（維運）</td>
+<td>全介面（IPv4／IPv6）</td>
+<td>只給維運來源；長期要關閉 root 與密碼登入，見 <a href="access.html">權限與帳號</a></td>
+</tr>
+<tr>
+<td>TCP 3000</td>
+<td>Gitea HTTP</td>
+<td>全介面</td>
+<td>限核准來源；規劃 HTTPS（目前為明文 HTTP）</td>
+</tr>
+<tr>
+<td>TCP 2222</td>
+<td>Gitea 內建 Git SSH</td>
+<td>全介面</td>
+<td>限核准來源；使用個人 Gitea 公鑰</td>
+</tr>
+<tr>
+<td><strong>TCP 9090</strong></td>
+<td><strong>未確認</strong></td>
+<td>全介面</td>
+<td><strong>新出現</strong>：9/21 盤點沒有。先確認行程與用途，再決定開放或關閉；可能與 <code>/home/myXAMPP</code> 的容器有關，未證實</td>
+</tr>
+<tr>
+<td>TCP 3142</td>
+<td>apt-cacher-ng</td>
+<td>全介面</td>
+<td>確認實際使用者；沒人用就停用，或限制來源</td>
+</tr>
+<tr>
+<td>TCP 5432</td>
+<td>PostgreSQL</td>
+<td>不發布到主機</td>
+<td>維持現狀，不要為了方便對外開放</td>
+</tr>
+<tr>
+<td>UDP 123</td>
+<td>NTP（chrony）</td>
+<td>IPv4 全介面</td>
+<td>chrony 允許 <code>192.168.1.0/24</code>；確認有人需要，見下方校時</td>
+</tr>
+<tr>
+<td>UDP 5353</td>
+<td>mDNS／Avahi</td>
+<td>全介面</td>
+<td>伺服器通常不需要區網探索，評估停用</td>
+</tr>
+<tr>
+<td>TCP 631</td>
+<td>CUPS 列印</td>
+<td>只有 loopback</td>
+<td>用途待確認</td>
+</tr>
+<tr>
+<td>TCP／UDP 53</td>
+<td>systemd-resolved</td>
+<td>只有 loopback</td>
+<td>本機 DNS stub，正常</td>
+</tr>
+</tbody>
+</table></div>
+<p>要確認 9090 是什麼（需要 sudo，唯讀）：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo ss -lntp | grep ':9090'
+</code></pre>
+<h2 id="防火牆的三層">防火牆的三層</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>層</th>
+<th>誰管</th>
+<th>做什麼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 上游 ACL</td>
+<td>網管</td>
+<td>決定哪些網段能到達這台主機</td>
+</tr>
+<tr>
+<td>② 主機 iptables</td>
+<td>Linux 管理員</td>
+<td><code>DOCKER-USER</code> 鏈裡的白名單，針對 3000／2222；<code>netfilter-persistent</code> 為 active</td>
+</tr>
+<tr>
+<td>③ Gitea 權限</td>
+<td>Gitea 管理員</td>
+<td>帳號、組織、專案授權</td>
+</tr>
+</tbody>
+</table></div>
+<p>UFW 為 inactive、fail2ban 為 inactive（2026-10-06）。Docker 發布的埠走的封包路徑與一般主機服務不同，不能只看 UFW，要看 <code>DOCKER-USER</code> 與 FORWARD／NAT；<strong>不要自行關閉 Docker 的防火牆管理</strong>。<a href="https://docs.docker.com/engine/network/packet-filtering-firewalls/">Docker 防火牆文件</a></p>
+<div class="admonition warning">
+<p class="admonition-title">舊的白名單腳本不能直接執行</p>
+<p><code>/home/Gitea/gitea-access-rules.sh</code> 會清空整條 <code>DOCKER-USER</code>，可能刪掉其他專案的規則；規則只依目的埠、沒有限制入口網卡與目的容器；而且檔案權限是 777，任何本機帳號都能改。請先把寫入權限收回 root，再由網管重構成專屬鏈。新手禁止直接執行。檔案內容讀過，<strong>但沒有執行</strong>，也無法讀取核心裡實際生效的規則。</p>
+</div>
+<h2 id="申請新使用者連線">申請新使用者連線</h2>
+<ol>
+<li>PM 記錄申請人、用途、來源 IP、預計到期日與專案。</li>
+<li>網管確認是否經 NAT 或 VPN；<strong>真正抵達主機的來源 IP</strong> 才是白名單要用的值。</li>
+<li>管理員先備存<strong>現行</strong>規則，確認 22 埠管理通道與現場主控台可用。</li>
+<li>經審核後，只加入需要的來源與埠；同時考慮 IPv4、IPv6 與持久化。</li>
+<li>從一台允許來源、一台不允許來源分別測 3000／2222；管理用 22 另外測。</li>
+<li>維護時段內驗證重啟 Docker 或重開機後規則仍在，保存測試結果與申請單。</li>
+</ol>
+<p>申請單欄位範本：</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>填寫</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>申請人／專案</td>
+<td></td>
+</tr>
+<tr>
+<td>用途</td>
+<td></td>
+</tr>
+<tr>
+<td>來源 IP（抵達主機時）</td>
+<td></td>
+</tr>
+<tr>
+<td>協定與埠</td>
+<td>3000／2222</td>
+</tr>
+<tr>
+<td>到期日</td>
+<td></td>
+</tr>
+<tr>
+<td>核准人（PM／網管）</td>
+<td></td>
+</tr>
+<tr>
+<td>測試結果（允許來源／拒絕來源）</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>只有白名單還不夠，還要另做 <a href="access.html">權限與帳號</a> 的 Gitea 帳號與專案授權。</p>
+<h2 id="校時ntp目前是壞的">校時（NTP）：目前是壞的</h2>
+<div class="admonition danger">
+<p class="admonition-title">已確認：時鐘比標準時間快約 50 分鐘，且全部時間來源連不上</p>
+<p>2026-10-05 與 10-06 兩次量測，主機比這台盤點用電腦快 49 分 50 秒與 49 分 49 秒，14 小時內只差 1 秒，所以是<strong>固定偏移</strong>（曾被一次性設錯），不是時鐘漂移。chrony 的 6 個來源（<code>10.36.1.1</code>、hinet 三個、Google、NTU）全部 <code>Reach 0</code>。</p>
+</div>
+<p><strong>為什麼 <code>Leap status: Normal</code> 會騙人</strong>：<code>chronyc tracking</code> 顯示 <code>Reference ID 7F7F0101</code>（就是 127.127.1.1，本機時鐘）與 <code>Stratum 10</code>，也就是 chrony 在跟自己比對。偏差顯示 0、狀態 Normal，但這不代表已對上標準時間。設定中的 <code>local stratum 10</code> 與 <code>allow 192.168.1.0/24</code> 還會把這個未校時的時間分給備機。</p>
+<p>診斷步驟（皆唯讀）：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">chronyc tracking
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">chronyc sources -v
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">ping -c 3 10.36.1.1
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">resolvectl status
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo journalctl -u chrony --since &quot;2 days ago&quot; --no-pager | tail -n 40
+</code></pre>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>現象</th>
+<th>代表</th>
+<th>下一步</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ping 10.36.1.1</code> 不通</td>
+<td>路由或該 NTP 伺服器不接受此主機</td>
+<td>找網管確認內網 NTP 位置與是否開放</td>
+</tr>
+<tr>
+<td>能 ping 外網、解析網域正常，來源仍全是 Reach 0</td>
+<td>多半是 <strong>UDP 123 出站被擋</strong></td>
+<td>請網管開放，或改用內網可達的時間來源</td>
+</tr>
+<tr>
+<td>DNS 解析失敗</td>
+<td>DNS 問題</td>
+<td>先修 DNS</td>
+</tr>
+<tr>
+<td>完全連不出去</td>
+<td>沒有外網</td>
+<td>需要內網時間來源，不要只換成公用來源</td>
+</tr>
+</tbody>
+</table></div>
+<p>修復前建議：把 <code>local stratum 10</code> 改為 <code>local stratum 10 orphan</code> 或暫時移除 <code>allow 192.168.1.0/24</code>，避免把未校時的時間繼續分給備機（此為變更，需先備份 <code>/etc/chrony/chrony.conf</code>）。</p>
+<p>驗收標準（三項都要成立）：<code>Reference ID</code> <strong>不是</strong> <code>7F7F0101</code> 且 <code>Stratum</code> 小於 10；<code>chronyc sources</code> 至少一個 <code>^*</code> 且 Reach 非 0；<code>timedatectl</code> 顯示 <code>NTPSynchronized=yes</code>；備機也一併確認。</p>
+<div class="admonition warning">
+<p class="admonition-title">修好之後會發生時間跳動</p>
+<p>設定中有 <code>makestep 1 3</code>，校時成功時時鐘可能一次往回跳約 50 分鐘。往回跳會讓日誌時間不連續，也可能讓排程重複執行或錯過窗口。請在<strong>非備份窗口</strong>（避開主機時間 20:25–22:05）、確認沒有維護鎖與備份進行中、先通知使用者後再修；修完後檢查當天日誌與排程有沒有重複。雙因素驗證（TOTP）要等校時修好後再推行。</p>
+</div>
+<h2 id="同網卡雙-ip-與-nat">同網卡雙 IP 與 NAT</h2>
+<p>主機另有 <code>/home/coffee/scripts/enable-nat.sh</code>，內容規劃把 <code>192.168.1.0/24</code> 經 <code>eno1</code> 做 NAT；目前 IP forwarding 確實為 1，但 NAT 規則無法讀取確認。主機可能還替其他設備做出口或校時，<strong>移機或關機前要先確認</strong>，不能只搬 Gitea。備機傳輸走同一個二層網段，不經預設閘道，所以主機到備機的傳輸與 NTP 問題各自獨立。</p>
+<h2 id="ipdns-變更清單">IP／DNS 變更清單</h2>
+<div class="admonition warning">
+<p class="admonition-title">這是規劃流程，不是目前已執行的變更</p>
+<p>變更 IP 前要同步檢查 Netplan、閘道、DNS、上游 ACL、Gitea 的 <code>DOMAIN</code>、<code>SSH_DOMAIN</code>、<code>ROOT_URL</code>、Git remote、Webhook、鏡像目的端與所有使用者文件。</p>
+</div>
+<p>前置：取得<strong>現場主控台</strong>（連線中斷時才能救）、備存原設定、由管理員檢查 YAML。以限時方式驗證：</p>
+<pre data-level="stop" data-label="中斷服務 · Linux bash"><code class="language-bash">sudo netplan try --timeout 120
+</code></pre>
+<p><strong>驗收</strong>：新連線與原連線都正常才按確認保留。<strong>回退</strong>：超時會自動回復，但仍要在主控台確認；原設定備份要先放在安全位置。<a href="https://netplan.readthedocs.io/en/stable/netplan-try/">Netplan try 說明</a></p>
+<h2 id="連不上時的排障">連不上時的排障</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
+<thead>
+<tr>
+<th>症狀</th>
+<th>看哪裡</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>使用者連不上網站或 Git</td>
+<td><a href="runbook.html">事件處理手冊 R1、R2、R3</a></td>
+</tr>
+<tr>
+<td>備份外送失敗、備機連不到</td>
+<td><a href="runbook.html">事件處理手冊 R4、R9</a></td>
+</tr>
+<tr>
+<td>時間不對</td>
+<td>本頁「校時」與 <a href="runbook.html">事件處理手冊 R7</a></td>
+</tr>
+</tbody>
+</table></div>
+<p>使用者端（Windows PowerShell）：</p>
+<pre data-level="ro" data-label="唯讀 · Windows PowerShell"><code class="language-powershell">Test-NetConnection 10.253.114.160 -Port 3000
+</code></pre>
+<p>主機端：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">ip -br address
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">ip route
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">ss -lntu
+</code></pre>
+<p>由有 sudo 權限的人補查，輸出只放在限制存取的維運紀錄：</p>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo iptables -S
+</code></pre>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo cat /etc/netplan/coffee_config.yaml
+</code></pre>
+<h2 id="附錄白名單腳本中的-ip-清單">附錄：白名單腳本中的 IP 清單</h2>
+<div class="admonition note">
+<p class="admonition-title">這是檔案內容，不是生效證據</p>
+<p>下列是 <code>gitea-access-rules.sh</code>（9/21 閱讀）裡的 IPv4 清單。無法確認核心裡實際生效的規則，也無法確認 IPv6 是否有同等限制。</p>
+</div>
+<pre><code class="language-text">10.253.114.250  10.253.114.117  10.253.111.129
+10.253.114.174  10.253.114.175  10.253.111.155
+10.253.114.177  10.253.114.157  10.253.114.195
+10.253.114.186  10.253.114.194  10.253.114.136
+10.253.114.206  10.253.114.210  10.253.114.139
+10.253.111.124  10.253.114.198  10.253.114.158
+10.253.114.149  10.253.114.129  10.253.114.128
+10.253.114.204  172.0.20.162    10.253.111.135
+</code></pre>
+<p><code>172.0.20.162</code> 不在 RFC1918 的 <code>172.16.0.0/12</code> 私有網段內；可能是現場規劃，也可能需更正，先找網管確認，不自行修改。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#先看這張圖">先看這張圖</a><a href="#位址與連線資訊">位址與連線資訊</a><a href="#對外監聽埠與建議">對外監聽埠與建議</a><a href="#防火牆的三層">防火牆的三層</a><a href="#申請新使用者連線">申請新使用者連線</a><a href="#校時ntp目前是壞的">校時（NTP）：目前是壞的</a><a href="#同網卡雙-ip-與-nat">同網卡雙 IP 與 NAT</a><a href="#ipdns-變更清單">IP／DNS 變更清單</a><a href="#連不上時的排障">連不上時的排障</a><a href="#附錄白名單腳本中的-ip-清單">附錄：白名單腳本中的 IP 清單</a></aside></div>
+<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>各頁資料日期見頁首；非即時監控</span></footer></main></div>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="回到頁首">↑</button>
+</body></html>
