@@ -56,7 +56,22 @@ if(outlineLinks.length){
  }
 }
 
-// copy-to-clipboard on code blocks
+// copy-to-clipboard on code blocks (falls back for non-secure origins, e.g. plain http on a LAN IP)
+function legacyCopy(text){
+ const area=document.createElement('textarea');
+ area.value=text;
+ area.setAttribute('readonly','');
+ area.style.position='fixed';
+ area.style.top='-1000px';
+ area.style.left='-1000px';
+ document.body.appendChild(area);
+ area.select();
+ area.setSelectionRange(0,text.length);
+ let ok=false;
+ try{ok=document.execCommand('copy');}catch(e){ok=false;}
+ document.body.removeChild(area);
+ return ok;
+}
 document.querySelectorAll('.article pre').forEach(pre=>{
  const btn=document.createElement('button');
  btn.className='copy-btn';
@@ -65,13 +80,13 @@ document.querySelectorAll('.article pre').forEach(pre=>{
  btn.setAttribute('aria-label','複製程式碼');
  btn.addEventListener('click',async()=>{
   const text=pre.querySelector('code')?.textContent??pre.textContent;
-  try{
-   await navigator.clipboard.writeText(text);
-   btn.textContent='已複製';
-   btn.classList.add('copied');
-  }catch(e){
-   btn.textContent='複製失敗';
+  let ok=false;
+  if(window.isSecureContext&&navigator.clipboard&&navigator.clipboard.writeText){
+   try{await navigator.clipboard.writeText(text);ok=true;}catch(e){ok=false;}
   }
+  if(!ok)ok=legacyCopy(text);
+  btn.textContent=ok?'已複製':'複製失敗';
+  btn.classList.toggle('copied',ok);
   setTimeout(()=>{btn.textContent='複製';btn.classList.remove('copied');},1800);
  });
  pre.appendChild(btn);
