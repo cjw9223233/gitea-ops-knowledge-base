@@ -12,7 +12,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 只查看排程：
 
-```bash
+```bash-ro
 sudo crontab -l
 ```
 

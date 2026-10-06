@@ -1,52 +1,12 @@
 [
-  {
-    "slug": "index",
-    "title": "維運總覽",
-    "lead": "以工作目的查閱。文件更新至 2026 年 10 月 5 日 18:33，非即時監控。"
-  },
-  {
-    "slug": "start",
-    "title": "新手入門",
-    "lead": "先分清楚主機、備機與執行帳號，再操作。"
-  },
-  {
-    "slug": "system",
-    "title": "系統與網路",
-    "lead": "9/21 基礎盤點與 10/5 連線補驗證分開呈現。"
-  },
-  {
-    "slug": "daily",
-    "title": "日常巡檢",
-    "lead": "先確認服務，再讀取工作結果；不要用備份命令當健康檢查。"
-  },
-  {
-    "slug": "logs",
-    "title": "Log 與產出物",
-    "lead": "先定位，再判讀。同一工作需要分別驗證本機、異機與還原。"
-  },
-  {
-    "slug": "schedule",
-    "title": "排程管理",
-    "lead": "三個時段維持不變；SSH 傳輸身分已於 10/5 修正為 coffee。"
-  },
-  {
-    "slug": "backup",
-    "title": "備份與還原",
-    "lead": "先證明可用，再承諾備援能力。"
-  },
-  {
-    "slug": "hardware",
-    "title": "硬碟與開機排查",
-    "lead": "9/23 故障調查快照。BIOS 偶爾找不到 SSD，根因尚未確認。"
-  },
-  {
-    "slug": "access",
-    "title": "權限與交接",
-    "lead": "以明確身分、受控權限與驗收責任交接。"
-  },
-  {
-    "slug": "changes",
-    "title": "變更與驗收",
-    "lead": "保留變更證據，避免把已部署誤認為已完成備援。"
-  }
+  {"slug":"index","title":"維運總覽","lead":"以工作目的查閱：先選入口，再看狀態與待辦。","group":"入門","audience":["新手","PM","維運","網管","開發者"],"evidence_date":"2026-10-06","status":"快照","risk":"唯讀","purpose":"一眼看到現況燈號、固定維護時段，並選對入口。","prereq":"不需要"},
+  {"slug":"start","title":"新手入門","lead":"先分清楚主機、備機與執行帳號，再操作。","group":"入門","audience":["新手","開發者","PM"],"evidence_date":"2026-10-06","status":"快照","risk":"唯讀","purpose":"第一次接手時，知道有哪些機器、能做什麼、不能做什麼。","prereq":"不需要，會開終端機更好"},
+  {"slug":"system","title":"系統與網路","lead":"9/21 基礎盤點與 10/5 連線補驗證分開呈現。","group":"架構","audience":["維運","網管","PM"],"evidence_date":"2026-10-05","status":"快照","risk":"唯讀","purpose":"查主機規格、容器、網路、防火牆與 Gitea 設定。","prereq":"Linux 基本指令、Docker 基本概念"},
+  {"slug":"daily","title":"日常巡檢","lead":"先確認服務，再讀取工作結果；不要用備份命令當健康檢查。","group":"營運","audience":["維運","新手"],"evidence_date":"2026-10-06","status":"快照","risk":"唯讀","purpose":"每天五分鐘確認服務與備份狀態，並依症狀處理。","prereq":"能登入主機"},
+  {"slug":"logs","title":"Log 與產出物","lead":"先定位，再判讀。同一工作需要分別驗證本機、異機與還原。","group":"營運","audience":["維運","新手"],"evidence_date":"2026-10-06","status":"快照","risk":"唯讀","purpose":"找到日誌與備份檔，判斷工作是否真的成功。","prereq":"sudo 權限"},
+  {"slug":"schedule","title":"排程管理","lead":"三個時段維持不變；SSH 傳輸身分已於 10/5 修正為 coffee。","group":"營運","audience":["維運","網管","PM"],"evidence_date":"2026-10-06","status":"快照","risk":"唯讀","purpose":"了解 root crontab、執行流程、保護機制與關機行為。","prereq":"cron 基本概念"},
+  {"slug":"backup","title":"備份與還原","lead":"先證明可用，再承諾備援能力。","group":"資料保護","audience":["維運","PM"],"evidence_date":"2026-10-06","status":"快照","risk":"唯讀","purpose":"了解備份分層、保留、缺口與還原驗收原則。","prereq":"RPO／RTO 概念（見名詞）"},
+  {"slug":"hardware","title":"硬碟與開機排查","lead":"9/23 故障調查快照。BIOS 偶爾找不到 SSD，根因尚未確認。","group":"營運","audience":["維運"],"evidence_date":"2026-10-05","status":"快照","risk":"唯讀","purpose":"排查 BIOS 找不到 SSD、開機異常與 22:00 再開機。","prereq":"硬體基本概念、可現場操作"},
+  {"slug":"access","title":"權限與交接","lead":"以明確身分、受控權限與驗收責任交接。","group":"治理","audience":["PM","維運","開發者"],"evidence_date":"2026-10-06","status":"快照","risk":"含變更","purpose":"知道誰能做什麼、如何加人與離職，以及待收斂的權限。","prereq":"Linux 權限、Gitea 組織概念"},
+  {"slug":"changes","title":"變更與驗收","lead":"保留變更證據，避免把已部署誤認為已完成備援。","group":"治理","audience":["PM","維運"],"evidence_date":"2026-10-06","status":"快照","risk":"唯讀","purpose":"查版本時間線、部署識別與未完成事項。","prereq":"不需要"}
 ]

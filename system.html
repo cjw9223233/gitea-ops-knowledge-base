@@ -4,16 +4,17 @@
 <meta name="description" content="9/21 基礎盤點與 10/5 連線補驗證分開呈現。"><title>系統與網路 · Gitea 維運知識庫</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23102c3c'/%3E%3Cpath d='m10 12 8 8-8 8m12 0h9' fill='none' stroke='%237ce4d4' stroke-width='3'/%3E%3C/svg%3E">
 <script>try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
-<link rel="stylesheet" href="styles.css"><script src="site.js" defer></script></head>
+<link rel="stylesheet" href="styles.css"><script src="search-index.js" defer></script><script src="site.js" defer></script></head>
 <body><a class="skip" href="#main">跳至主要內容</a>
 <aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a>
-<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋頁面…" aria-label="搜尋導覽頁面" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的頁面</p></div>
-<p class="nav-label">操作與交接</p><nav class="nav" aria-label="知識庫導覽"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a><a href="system.html" aria-current="page"><span>03</span>系統與網路</a><a href="daily.html"><span>04</span>日常巡檢</a><a href="logs.html"><span>05</span>Log 與產出物</a><a href="schedule.html"><span>06</span>排程管理</a><a href="backup.html"><span>07</span>備份與還原</a><a href="hardware.html"><span>08</span>硬碟與開機排查</a><a href="access.html"><span>09</span>權限與交接</a><a href="changes.html"><span>10</span>變更與驗收</a></nav><div class="side-bottom"><strong>票務中心系統組</strong>內部維運文件<br>基準 2026.10.05</div></aside>
-<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>系統與網路</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">交接版 <strong>02</strong></div></header>
-<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 維護與交接</p><h1>系統與網路</h1><p class="intro">9/21 基礎盤點與 10/5 連線補驗證分開呈現。</p></div><div class="head-note">最後證據更新<strong>2026 年 10 月 5 日</strong>18:33 · Asia/Taipei</div></header>
-<div class="notice"><strong>文件快照</strong><span>已部署不等於已驗收。新版正式異機傳輸與隔離還原，仍待確認。</span></div>
+<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋全站內容…" aria-label="搜尋全站內容" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的內容</p><div class="search-results" id="search-results" hidden></div></div>
+<div class="nav-groups"><div class="nav-group"><p class="nav-label">入門</p><nav class="nav" aria-label="入門"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a></nav></div><div class="nav-group"><p class="nav-label">架構</p><nav class="nav" aria-label="架構"><a href="system.html" aria-current="page"><span>03</span>系統與網路</a></nav></div><div class="nav-group"><p class="nav-label">資料保護</p><nav class="nav" aria-label="資料保護"><a href="backup.html"><span>04</span>備份與還原</a></nav></div><div class="nav-group"><p class="nav-label">營運</p><nav class="nav" aria-label="營運"><a href="daily.html"><span>05</span>日常巡檢</a><a href="logs.html"><span>06</span>Log 與產出物</a><a href="schedule.html"><span>07</span>排程管理</a><a href="hardware.html"><span>08</span>硬碟與開機排查</a></nav></div><div class="nav-group"><p class="nav-label">治理</p><nav class="nav" aria-label="治理"><a href="access.html"><span>09</span>權限與交接</a><a href="changes.html"><span>10</span>變更與驗收</a></nav></div></div><div class="side-bottom"><strong>內部維運文件</strong>每頁標示資料日期與狀態<br>非即時監控</div></aside>
+<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 / 架構 /</span><b>系統與網路</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">手冊 <strong>v3</strong></div></header>
+<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 架構</p><h1>系統與網路</h1><p class="intro">9/21 基礎盤點與 10/5 連線補驗證分開呈現。</p></div><div class="head-note">資料日期<strong>2026-10-05</strong><span class="chip snap">快照</span></div></header>
+<dl class="meta"><div><dt>這頁解決什麼</dt><dd>查主機規格、容器、網路、防火牆與 Gitea 設定。</dd></div><div><dt>前置知識</dt><dd>Linux 基本指令、Docker 基本概念</dd></div><div><dt>風險等級</dt><dd><span class="risk r-ro">唯讀</span></dd></div><div><dt>適合讀者</dt><dd><span class="aud">維運</span><span class="aud">網管</span><span class="aud">PM</span></dd></div></dl>
+<div class="notice"><strong>文件快照</strong><span>內容為資料日期當天的盤點，非即時監控。「已部署」不等於「已驗收」，未演練的步驟會標示「待演練」。</span></div>
 
-<div class="doc-layout"><article class="article"><h2 id="2026-10-05">2026-10-05 補驗證</h2>
+<div class="doc-layout"><article class="article"><h2 id="2026-10-05-補驗證">2026-10-05 補驗證</h2>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
 <tr>
@@ -52,14 +53,23 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="2026-09-21">原始架構盤點（2026-09-21）</h2>
+<h2 id="原始架構盤點2026-09-21">原始架構盤點（2026-09-21）</h2>
 <p>以下版本、位址與數值是當日紀錄；有後續更新時以本頁上方與變更紀錄為準。</p>
-<h3 id="2">2. 系統架構與實機清單</h3>
-<h3 id="21">2.1 架構</h3>
-<p class="flow">使用者 → Gitea → PostgreSQL<br>主機保存服務資料，備機接收獨立封存備份。</p>
-
+<h3 id="2-系統架構與實機清單">2. 系統架構與實機清單</h3>
+<h3 id="21-架構">2.1 架構</h3>
+<pre><code class="language-mermaid">flowchart LR
+    U[使用者電腦／核准網路] --&gt;|HTTP 3000| G[Gitea server\n1.23.5-rootless]
+    U --&gt;|Git SSH 2222| G
+    A[維運人員] --&gt;|Linux SSH 22| H[Ubuntu 主機 coffee\n10.253.114.160]
+    G --&gt;|db:5432\nDocker 私有網路| P[PostgreSQL 14.18]
+    G --&gt; D[/home/Gitea/data 與 config]
+    P --&gt; Q[/home/Gitea/postgres]
+    D -.同一顆磁碟上的歷史備份.-&gt; B[/var/backups/coffee]
+    Q -.一致性未驗證.-&gt; B
+    G -.部分專案推送失敗.-&gt; M[10.253.114.250:3000\n鏡像目的端，未登入盤點]
+</code></pre>
 <p>圖中的網路連線仍受防火牆及上游網路限制。本次只確認本機服務回應正常，沒有從所有使用者網段進行可達性測試。</p>
-<h3 id="22">2.2 主機與資源</h3>
+<h3 id="22-主機與資源">2.2 主機與資源</h3>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
 <tr>
@@ -119,7 +129,7 @@
 </tbody>
 </table></div>
 <p>時間問題會影響備份名稱、日誌排序、憑證及雙因素驗證。一次近乎同時的比較：主機 UTC 為 <code>03:45:44</code>，盤點工作站 UTC 為 <code>02:55:20</code>，約相差 50 分鐘。這證明兩台時鐘不一致，<strong>不能單憑工作站時間認定哪個是標準時間</strong>；需對照可信任的公司 NTP。手冊中主機日誌與檔案時間均保留原值。</p>
-<h3 id="23">2.3 容器與相關服務</h3>
+<h3 id="23-容器與相關服務">2.3 容器與相關服務</h3>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
 <tr>
@@ -154,7 +164,7 @@
 <p>Gitea 的 Compose 專案名稱為 <code>gitea</code>，服務名稱是 <code>server</code> 與 <code>db</code>。兩個執行中的容器未設定 Docker healthcheck，也未設定記憶體／CPU 上限。<code>Up</code> 只代表行程存活，要另外驗證網站與資料庫。</p>
 <p>Gitea 映像的 <code>rootless</code> 指容器內的 Gitea 以非 root 使用者運作。本機 Docker 是系統層 daemon，不能把它解讀為整個 Docker 都是 rootless。</p>
 <p>主機另有 apt-cacher-ng、chrony、桌面環境、CUPS、Avahi、Bluetooth 等服務。<code>fwupd-refresh.service</code> 顯示失敗；不等於 Gitea 故障。當日 <code>last -x</code> 有多筆啟動及 <code>crash</code> 標記，原因尚未確認，應查電力、關機排程及開機日誌，不能直接宣稱是硬體故障。</p>
-<h3 id="24">2.4 專案規模與管理現況</h3>
+<h3 id="24-專案規模與管理現況">2.4 專案規模與管理現況</h3>
 <p>以下為唯讀資料庫統計，沒有擷取帳號名單或原始碼：</p>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
@@ -199,8 +209,8 @@
 </tbody>
 </table></div>
 <p>非私有不代表已在 Internet 公開，但目前 <code>REQUIRE_SIGNIN_VIEW=false</code>，應由專案負責人確認可連到網站的人是否都應看見這些專案。</p>
-<h3 id="3">3. 網路、連線與防火牆</h3>
-<h3 id="31">3.1 網路設定現況</h3>
+<h3 id="3-網路連線與防火牆">3. 網路、連線與防火牆</h3>
+<h3 id="31-網路設定現況">3.1 網路設定現況</h3>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
 <tr>
@@ -264,7 +274,7 @@
 </tbody>
 </table></div>
 <p><code>192.168.1.2</code> 與主 IP 在<strong>同一張網卡</strong>，不代表有兩條獨立網路備援。容器 IP 可能重建後改變，Gitea 連資料庫應維持 <code>db:5432</code>，不要改成目前的 <code>172.18.0.3</code>。</p>
-<h3 id="32">3.2 對外監聽埠</h3>
+<h3 id="32-對外監聽埠">3.2 對外監聽埠</h3>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
 <tr>
@@ -332,7 +342,7 @@
 </tbody>
 </table></div>
 <p>監聽不代表所有來源都能連入；反過來，UFW inactive 也不代表完全沒有防火牆。</p>
-<h3 id="33-gitea">3.3 已存在的 Gitea 白名單</h3>
+<h3 id="33-已存在的-gitea-白名單">3.3 已存在的 Gitea 白名單</h3>
 <p>現有 <code>/home/Gitea/gitea-access-rules.sh</code> 使用 <code>iptables</code> 的 <code>DOCKER-USER</code> 鏈，允許指定 IP 連入 3000／2222，最後對其他來源 DROP，並執行 <code>netfilter-persistent save</code>。本次<strong>只閱讀，沒有執行</strong>。</p>
 <p>腳本中的有效 IPv4 清單如下；這是<strong>檔案內容，不是已驗證的生效規則</strong>：</p>
 <pre><code class="language-text">10.253.114.250  10.253.114.117  10.253.111.129
@@ -348,7 +358,7 @@
 <p>已確認 <code>netfilter-persistent</code> enabled 且本次開機載入成功，並存在 <code>/etc/iptables/rules.v4</code>、<code>rules.v6</code>。但本次無法讀取這兩個檔案及核心內的規則，故不能保證白名單完整、IPv6 有同等限制，或重開機後 Docker 規則順序正確。</p>
 <p>Docker 發布埠的封包路徑與一般主機服務不同，不能只看 UFW。現有 iptables 架構下，應檢查 <code>DOCKER-USER</code> 與 FORWARD/NAT；不要自行關閉 Docker 的防火牆管理。<a href="https://docs.docker.com/engine/network/packet-filtering-firewalls/">Docker 防火牆文件</a></p>
 <p><strong>原腳本的維護風險：</strong>它會清空整條 <code>DOCKER-USER</code>，可能刪掉其他專案規則；規則只依目的埠、未限入口網卡與目的容器，可能影響其他同埠流量；而且腳本本身為 777，可被其他本機帳號修改。應先限制腳本寫入權，再由網管重構成專屬鏈，禁止新手直接照舊 README 執行。</p>
-<h3 id="34">3.4 新增使用者連線需求</h3>
+<h3 id="34-新增使用者連線需求">3.4 新增使用者連線需求</h3>
 <ol>
 <li>PM 記錄申請人、用途、來源 IP、預計到期日及專案。</li>
 <li>網管確認是否經 NAT／VPN；真正抵達主機的來源 IP 才是白名單應使用的值。</li>
@@ -358,34 +368,34 @@
 <li>維護時段內驗證重啟 Docker／重開機後效果，保存測試結果與申請單。</li>
 </ol>
 <p>只有白名單仍不夠，還須另做第 5 章的 Gitea 帳號及專案授權。</p>
-<h3 id="35">3.5 唯讀網路排查</h3>
+<h3 id="35-唯讀網路排查">3.5 唯讀網路排查</h3>
 <p>Windows 使用者端：</p>
-<pre><code class="language-powershell">Test-NetConnection 10.253.114.160 -Port 22
+<pre data-level="ro" data-label="唯讀 · Windows PowerShell"><code class="language-powershell">Test-NetConnection 10.253.114.160 -Port 22
 Test-NetConnection 10.253.114.160 -Port 3000
 Test-NetConnection 10.253.114.160 -Port 2222
 </code></pre>
 <p>Linux 主機端：</p>
-<pre><code class="language-bash">ip -br address
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">ip -br address
 ip route
 resolvectl status
 ss -lntup
 networkctl status eno1 --no-pager
 </code></pre>
 <p>由有 sudo 權限的人補查，輸出僅存於限制存取的維運紀錄：</p>
-<pre><code class="language-bash">sudo cat /etc/netplan/coffee_config.yaml
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">sudo cat /etc/netplan/coffee_config.yaml
 sudo iptables -S
 sudo iptables -t nat -S
 sudo ip6tables -S
 sudo nft list ruleset
 sudo ufw status verbose
 </code></pre>
-<h3 id="36-ipdns-natntp">3.6 IP／DNS 變更與 NAT、NTP 的關聯</h3>
+<h3 id="36-ipdns-變更與-natntp-的關聯">3.6 IP／DNS 變更與 NAT、NTP 的關聯</h3>
 <p><strong>以下為規劃流程，不是目前已執行的變更。</strong>變更 IP 前需同步檢查 Netplan、閘道、DNS、上游 ACL、Gitea <code>DOMAIN</code>／<code>SSH_DOMAIN</code>／<code>ROOT_URL</code>、Git remote、Webhook、鏡像目的端及所有使用者文件。</p>
 <p>先取得現場主控台，備存原設定，由管理員檢查 YAML 後使用 <code>netplan try --timeout 120</code> 做限時驗證。新連線及原連線都正常才確認保留；超時回復仍需從主控台確認，不能把自動回復當作絕對保障。<a href="https://netplan.readthedocs.io/en/stable/netplan-try/">Netplan try 說明</a></p>
 <p>另外找到 <code>/home/coffee/scripts/enable-nat.sh</code>，內容規劃把 <code>192.168.1.0/24</code> 經 <code>eno1</code> 做 NAT；目前 IP forwarding 確實為 1，但 NAT 規則未能讀取。主機可能還承擔其他設備的出口或校時功能，移機前要確認，不能只搬 Gitea 就關機。</p>
 <p>chrony 設有多個上游 NTP，盤點時全部來源為 <code>^?</code>／Reach 0，且啟用 <code>local stratum 10</code>。這會在沒有上游時仍以本地時鐘提供時間；<code>Leap status: Normal</code> 不等於已對準外部標準。先查公司 NTP、DNS、UDP 123 與網路政策，再於維護時段處理校時及 RTC 設定，避免突然跳時影響服務。</p>
-<h3 id="4-docker-gitea">4. Docker 與 Gitea 設定管理</h3>
-<h3 id="41">4.1 重要檔案與資料位置</h3>
+<h3 id="4-docker-與-gitea-設定管理">4. Docker 與 Gitea 設定管理</h3>
+<h3 id="41-重要檔案與資料位置">4.1 重要檔案與資料位置</h3>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
 <tr>
@@ -448,7 +458,7 @@ sudo ufw status verbose
 </tbody>
 </table></div>
 <p><code>/home/Gitea</code> 裡另有 2025-04-07 的 <code>config0407.tar</code>、<code>data0407.tar</code>、<code>postgres0407.tar</code>、<code>gitea0407.tar.gz</code>。年代久且用途未完整驗證，不能當最新還原點。</p>
-<h3 id="42">4.2 已確認的應用設定</h3>
+<h3 id="42-已確認的應用設定">4.2 已確認的應用設定</h3>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
 <tr>
@@ -520,8 +530,8 @@ sudo ufw status verbose
 </tbody>
 </table></div>
 <p>Gitea 的 <code>GITEA__...</code> 環境變數在容器啟動時可套用設定；本機 DB 設定由 Compose 提供。只改 <code>app.ini</code> 的 DB 密碼，可能在下一次啟動被環境變數覆蓋。<a href="https://docs.gitea.com/1.23/installation/install-with-docker-rootless/">Gitea 1.23 rootless Docker 文件</a></p>
-<h3 id="43">4.3 日常只讀管理</h3>
-<pre><code class="language-bash">cd /home/Gitea
+<h3 id="43-日常只讀管理">4.3 日常只讀管理</h3>
+<pre data-level="ro" data-label="唯讀 · Linux bash"><code class="language-bash">cd /home/Gitea
 docker compose -p gitea -f docker-compose.yml ps -a
 docker compose -p gitea -f docker-compose.yml config --quiet
 docker logs --since 30m --tail 100 gitea-server-1
@@ -529,7 +539,7 @@ docker logs --since 30m --tail 100 gitea-db-1
 docker stats --no-stream gitea-server-1 gitea-db-1
 </code></pre>
 <p><code>config --quiet</code> 只做驗證；不要把完整 <code>docker compose config</code> 或未篩選的 <code>docker inspect</code> 輸出貼進工單，因為可能含環境變數密碼。日誌也要先遮蔽 URL 認證資訊、權杖及個資。</p>
-<h3 id="44">4.4 設定變更的標準流程</h3>
+<h3 id="44-設定變更的標準流程">4.4 設定變更的標準流程</h3>
 <ol>
 <li>建立變更單，寫明目的、影響範圍、維護時間、備份及回復方式。</li>
 <li>保存原 Compose、app.ini 與實際映像 digest；機密放密碼庫或受限備份。</li>
@@ -537,7 +547,7 @@ docker stats --no-stream gitea-server-1 gitea-db-1
 <li>執行 <code>docker compose ... config --quiet</code> 檢查 YAML；它不保證所有應用參數都正確。</li>
 <li>Compose 設定變動需要重建容器才會套用；單純 <code>restart</code> 不會重新讀入新的 Compose 定義。</li>
 <li>用網站、healthz、Git 與權限驗收；紀錄結果並更新本手冊。</li>
-</ol></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#2026-10-05">2026-10-05 補驗證</a><a href="#2026-09-21">原始架構盤點（2026-09-21）</a></aside></div>
-<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>狀態依盤點紀錄呈現，非即時監控</span></footer></main></div>
+</ol></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#2026-10-05-補驗證">2026-10-05 補驗證</a><a href="#原始架構盤點2026-09-21">原始架構盤點（2026-09-21）</a></aside></div>
+<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>各頁資料日期見頁首；非即時監控</span></footer></main></div>
 <button class="back-to-top" id="back-to-top" type="button" aria-label="回到頁首">↑</button>
 </body></html>

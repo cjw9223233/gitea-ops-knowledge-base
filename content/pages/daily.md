@@ -2,23 +2,23 @@
 
 在正式主機 coffee 執行；以下只讀取狀態。
 
-```bash
+```bash-ro
 date -Is
 ```
 
-```bash
+```bash-ro
 systemctl is-active cron
 ```
 
-```bash
+```bash-ro
 docker ps --format '{{.Names}} {{.Status}}'
 ```
 
-```bash
+```bash-ro
 curl --max-time 10 -fsS http://127.0.0.1:3000/api/healthz
 ```
 
-```bash
+```bash-ro
 df -h / /home
 ```
 

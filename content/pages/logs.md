@@ -11,54 +11,54 @@
 
 ## 讀取當前與輪替日誌
 
-```bash
+```bash-ro
 sudo tail -n 100 /var/log/gitea-maintenance/daily.log
 ```
 
-```bash
+```bash-ro
 sudo tail -n 100 /var/log/gitea-maintenance/weekly.log
 ```
 
-```bash
+```bash-ro
 sudo tail -n 100 /var/log/gitea-maintenance/shutdown.log
 ```
 
-```bash
+```bash-ro
 sudo ls -lh /var/log/gitea-maintenance/
 ```
 
 若當前檔案是空的，查看最近輪替檔；檔名依清單為準。
 
-```bash
+```bash-ro
 sudo tail -n 100 /var/log/gitea-maintenance/daily.log.1
 ```
 
-```bash
+```bash-ro
 sudo zcat /var/log/gitea-maintenance/daily.log.2.gz
 ```
 
 ## 查本機備份與容量
 
-```bash
+```bash-ro
 sudo ls -lh /var/backups/gitea-maintenance/daily/
 ```
 
-```bash
+```bash-ro
 sudo ls -lh /var/backups/gitea-maintenance/weekly/
 ```
 
-```bash
+```bash-ro
 sudo du -sh /var/backups/gitea-maintenance/daily /var/backups/gitea-maintenance/weekly
 ```
 
-```bash
+```bash-ro
 sudo find /var/backups/gitea-maintenance -maxdepth 3 -type f -printf '%p  %s bytes
 '
 ```
 
 ## 查備機（coffee 執行，不加 sudo）
 
-```bash
+```bash-ro
 ssh -o BatchMode=yes -o StrictHostKeyChecking=yes coffee@192.168.1.3 'ls -lh /home/coffee/gitea-backups/'
 ```
 

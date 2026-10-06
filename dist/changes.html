@@ -4,16 +4,17 @@
 <meta name="description" content="保留變更證據，避免把已部署誤認為已完成備援。"><title>變更與驗收 · Gitea 維運知識庫</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23102c3c'/%3E%3Cpath d='m10 12 8 8-8 8m12 0h9' fill='none' stroke='%237ce4d4' stroke-width='3'/%3E%3C/svg%3E">
 <script>try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
-<link rel="stylesheet" href="styles.css"><script src="site.js" defer></script></head>
+<link rel="stylesheet" href="styles.css"><script src="search-index.js" defer></script><script src="site.js" defer></script></head>
 <body><a class="skip" href="#main">跳至主要內容</a>
 <aside class="sidebar" id="navigation"><a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">&gt;_</span><span>Gitea 維運知識庫<small>OPERATIONS / DOCS</small></span></a>
-<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋頁面…" aria-label="搜尋導覽頁面" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的頁面</p></div>
-<p class="nav-label">操作與交接</p><nav class="nav" aria-label="知識庫導覽"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a><a href="system.html"><span>03</span>系統與網路</a><a href="daily.html"><span>04</span>日常巡檢</a><a href="logs.html"><span>05</span>Log 與產出物</a><a href="schedule.html"><span>06</span>排程管理</a><a href="backup.html"><span>07</span>備份與還原</a><a href="hardware.html"><span>08</span>硬碟與開機排查</a><a href="access.html"><span>09</span>權限與交接</a><a href="changes.html" aria-current="page"><span>10</span>變更與驗收</a></nav><div class="side-bottom"><strong>票務中心系統組</strong>內部維運文件<br>基準 2026.10.05</div></aside>
-<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 /</span><b>變更與驗收</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">交接版 <strong>02</strong></div></header>
-<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 維護與交接</p><h1>變更與驗收</h1><p class="intro">保留變更證據，避免把已部署誤認為已完成備援。</p></div><div class="head-note">最後證據更新<strong>2026 年 10 月 5 日</strong>18:33 · Asia/Taipei</div></header>
-<div class="notice"><strong>文件快照</strong><span>已部署不等於已驗收。新版正式異機傳輸與隔離還原，仍待確認。</span></div>
+<div class="nav-search"><input type="search" id="nav-filter" placeholder="搜尋全站內容…" aria-label="搜尋全站內容" autocomplete="off"><p class="nav-search-empty" id="nav-empty" hidden>沒有符合的內容</p><div class="search-results" id="search-results" hidden></div></div>
+<div class="nav-groups"><div class="nav-group"><p class="nav-label">入門</p><nav class="nav" aria-label="入門"><a href="index.html"><span>01</span>維運總覽</a><a href="start.html"><span>02</span>新手入門</a></nav></div><div class="nav-group"><p class="nav-label">架構</p><nav class="nav" aria-label="架構"><a href="system.html"><span>03</span>系統與網路</a></nav></div><div class="nav-group"><p class="nav-label">資料保護</p><nav class="nav" aria-label="資料保護"><a href="backup.html"><span>04</span>備份與還原</a></nav></div><div class="nav-group"><p class="nav-label">營運</p><nav class="nav" aria-label="營運"><a href="daily.html"><span>05</span>日常巡檢</a><a href="logs.html"><span>06</span>Log 與產出物</a><a href="schedule.html"><span>07</span>排程管理</a><a href="hardware.html"><span>08</span>硬碟與開機排查</a></nav></div><div class="nav-group"><p class="nav-label">治理</p><nav class="nav" aria-label="治理"><a href="access.html"><span>09</span>權限與交接</a><a href="changes.html" aria-current="page"><span>10</span>變更與驗收</a></nav></div></div><div class="side-bottom"><strong>內部維運文件</strong>每頁標示資料日期與狀態<br>非即時監控</div></aside>
+<div class="shell"><header class="topbar"><button class="mobile-menu" id="menu-button" aria-controls="navigation" aria-expanded="false" aria-label="開啟或關閉導覽">☰</button><div class="crumb"><span>維運知識庫 / 治理 /</span><b>變更與驗收</b></div><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切換深色／淺色模式" title="切換深色／淺色模式"><span aria-hidden="true">🌙</span></button><div class="edition">手冊 <strong>v3</strong></div></header>
+<main id="main" class="content"><header class="head"><div><p class="eyebrow">GITEA / 治理</p><h1>變更與驗收</h1><p class="intro">保留變更證據，避免把已部署誤認為已完成備援。</p></div><div class="head-note">資料日期<strong>2026-10-06</strong><span class="chip snap">快照</span></div></header>
+<dl class="meta"><div><dt>這頁解決什麼</dt><dd>查版本時間線、部署識別與未完成事項。</dd></div><div><dt>前置知識</dt><dd>不需要</dd></div><div><dt>風險等級</dt><dd><span class="risk r-ro">唯讀</span></dd></div><div><dt>適合讀者</dt><dd><span class="aud">PM</span><span class="aud">維運</span></dd></div></dl>
+<div class="notice"><strong>文件快照</strong><span>內容為資料日期當天的盤點，非即時監控。「已部署」不等於「已驗收」，未演練的步驟會標示「待演練」。</span></div>
 
-<div class="doc-layout"><article class="article"><h2 id="_1">版本時間線</h2>
+<div class="doc-layout"><article class="article"><h2 id="版本時間線">版本時間線</h2>
 <div class="table-wrap" tabindex="0" role="region" aria-label="可橫向捲動的資料表"><table>
 <thead>
 <tr>
@@ -55,7 +56,7 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="_2">部署識別</h2>
+<h2 id="部署識別">部署識別</h2>
 <p>正式程式：<code>/usr/local/lib/gitea-maintenance/gitea_maintenance.py</code></p>
 <pre><code class="language-text">83513d0e3420b856b794fd6ace8a5bdaa0c75116c7b90849ec64f1be91deef0b
 </code></pre>
@@ -63,7 +64,7 @@
 <pre><code class="language-text">/var/backups/gitea-cron-changes/20261005T103208Z-coffee-ssh-857242/gitea_maintenance.py.before
 </code></pre>
 <p>10/5 實際安裝套件在主機多一層同名資料夾，並不影響正式程式位置。更新器未修改三項 crontab，也未在安裝時觸發停機或備份。</p>
-<h2 id="_3">未完成事項</h2>
+<h2 id="未完成事項">未完成事項</h2>
 <ol>
 <li>新版正式傳輸與遠端 SHA-256 驗收。</li>
 <li>隔離還原演練與 RPO／RTO 確認。</li>
@@ -72,9 +73,9 @@
 <li>備機保留、容量告警與值班通知。</li>
 <li>NTP、22:00 再開機與硬體故障排查。</li>
 </ol>
-<h2 id="_4">完整報告</h2>
+<h2 id="完整報告">完整報告</h2>
 <p><a href="downloads/cron-review-20261005.md">下載 10/5 排程再稽核報告（Markdown）</a></p>
-<p>本網站整理讀者需要的現行操作，完整報告保留修正前證據及後續補證。舊的 root 建立金鑰方案已撤回，不應再執行。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#_1">版本時間線</a><a href="#_2">部署識別</a><a href="#_3">未完成事項</a><a href="#_4">完整報告</a></aside></div>
-<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>狀態依盤點紀錄呈現，非即時監控</span></footer></main></div>
+<p>本網站整理讀者需要的現行操作，完整報告保留修正前證據及後續補證。舊的 root 建立金鑰方案已撤回，不應再執行。</p></article><aside class="outline" aria-label="本頁目錄"><h2>本頁內容</h2><a href="#版本時間線">版本時間線</a><a href="#部署識別">部署識別</a><a href="#未完成事項">未完成事項</a><a href="#完整報告">完整報告</a></aside></div>
+<footer class="footer"><span>Gitea 維運知識庫 · 內部使用</span><span>各頁資料日期見頁首；非即時監控</span></footer></main></div>
 <button class="back-to-top" id="back-to-top" type="button" aria-label="回到頁首">↑</button>
 </body></html>

@@ -164,7 +164,7 @@ Docker 發布埠的封包路徑與一般主機服務不同，不能只看 UFW。
 
 Windows 使用者端：
 
-```powershell
+```powershell-ro
 Test-NetConnection 10.253.114.160 -Port 22
 Test-NetConnection 10.253.114.160 -Port 3000
 Test-NetConnection 10.253.114.160 -Port 2222
@@ -172,7 +172,7 @@ Test-NetConnection 10.253.114.160 -Port 2222
 
 Linux 主機端：
 
-```bash
+```bash-ro
 ip -br address
 ip route
 resolvectl status
@@ -182,7 +182,7 @@ networkctl status eno1 --no-pager
 
 由有 sudo 權限的人補查，輸出僅存於限制存取的維運紀錄：
 
-```bash
+```bash-ro
 sudo cat /etc/netplan/coffee_config.yaml
 sudo iptables -S
 sudo iptables -t nat -S
@@ -246,7 +246,7 @@ Gitea 的 `GITEA__...` 環境變數在容器啟動時可套用設定；本機 DB
 
 ### 4.3 日常只讀管理
 
-```bash
+```bash-ro
 cd /home/Gitea
 docker compose -p gitea -f docker-compose.yml ps -a
 docker compose -p gitea -f docker-compose.yml config --quiet

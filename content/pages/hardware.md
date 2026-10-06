@@ -26,7 +26,7 @@
 
 ## 唯讀健康檢查
 
-```bash
+```bash-ro
 sudo smartctl -x /dev/sda
 ```
 
